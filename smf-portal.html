@@ -1,0 +1,2675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MainSensei SMF</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ─── TOKEN SYSTEM ──────────────────────────────────────────── */
+:root {
+  --bg-base:       #F5F7FA;
+  --bg-panel:      #FFFFFF;
+  --bg-panel-alt:  #F0F3F7;
+  --bg-hover:      #E8EDF3;
+  --border:        #D0D7DE;
+  --border-light:  #E5E7EB;
+  --cyan:          #0099CC;
+  --cyan-dim:      rgba(0,153,204,0.10);
+  --green:         #1A9B45;
+  --amber:         #C77D00;
+  --red:           #D92D20;
+  --purple:        #7C3AED;
+  --text-primary:  #1F2937;
+  --text-secondary:#667085;
+  --text-muted:    #98A2B3;
+  --mono:          'JetBrains Mono', monospace;
+  --sans:          'Inter', sans-serif;
+  --radius-sm:     4px;
+  --radius:        8px;
+  --radius-lg:     12px;
+  --sidebar-w:     260px;
+  --topbar-h:      56px;
+  --transition:    0.18s ease;
+}
+
+/* ─── RESET ─────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 14px; }
+body {
+  font-family: var(--sans);
+  background: var(--bg-base);
+  color: var(--text-primary);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+}
+a { color: inherit; text-decoration: none; }
+button { font-family: var(--sans); cursor: pointer; border: none; background: none; }
+input, select { font-family: var(--sans); }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-base); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* ─── TOPBAR ─────────────────────────────────────────────────── */
+.topbar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  height: var(--topbar-h);
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 16px;
+  padding: 0 20px;
+}
+.topbar-logo {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  width: var(--sidebar-w);
+  flex-shrink: 0;
+}
+.logo-mark {
+  width: 28px; height: 28px;
+  background: linear-gradient(135deg, var(--cyan), var(--purple));
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; color: #000;
+  letter-spacing: -0.5px;
+}
+.logo-text {
+  font-size: 14px; font-weight: 600; color: var(--text-primary);
+  letter-spacing: -0.2px;
+}
+.logo-text span { color: var(--cyan); }
+.topbar-search {
+  flex: 1; max-width: 400px;
+  position: relative;
+}
+.topbar-search input {
+  width: 100%;
+  background: var(--bg-base);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  padding: 7px 12px 7px 34px;
+  font-size: 13px;
+  outline: none;
+  transition: border-color var(--transition);
+}
+.topbar-search input:focus { border-color: var(--cyan); }
+.topbar-search input::placeholder { color: var(--text-muted); }
+.search-icon {
+  position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+  color: var(--text-muted); font-size: 13px;
+}
+.topbar-right {
+  margin-left: auto;
+  display: flex; align-items: center; gap: 10px;
+}
+.status-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 6px var(--green);
+}
+.status-label { font-size: 12px; color: var(--text-secondary); }
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 13px; font-weight: 500;
+  transition: all var(--transition);
+  cursor: pointer;
+}
+.btn-primary {
+  background: var(--cyan);
+  color: #000;
+  border: 1px solid var(--cyan);
+}
+.btn-primary:hover { background: #00BFDF; }
+.btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+.btn-ghost:hover { background: var(--bg-hover); color: var(--text-primary); border-color: var(--text-muted); }
+.btn-danger {
+  background: rgba(255,74,74,0.1);
+  color: var(--red);
+  border: 1px solid rgba(255,74,74,0.3);
+}
+.btn-danger:hover { background: rgba(255,74,74,0.2); }
+.avatar {
+  width: 30px; height: 30px;
+  background: linear-gradient(135deg, #A78BFA, #00D4FF);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 600; color: #000;
+  cursor: pointer;
+}
+
+/* ─── LAYOUT ─────────────────────────────────────────────────── */
+.app-body {
+  display: flex;
+  margin-top: var(--topbar-h);
+  min-height: calc(100vh - var(--topbar-h));
+}
+
+/* ─── SIDEBAR ─────────────────────────────────────────────────── */
+.sidebar {
+  width: var(--sidebar-w);
+  background: var(--bg-panel);
+  border-right: 1px solid var(--border);
+  position: fixed;
+  top: var(--topbar-h);
+  bottom: 0;
+  left: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  z-index: 50;
+  padding-bottom: 24px;
+}
+.sidebar-section { padding: 20px 12px 4px; }
+.sidebar-section-label {
+  font-size: 10px; font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  padding: 0 8px;
+  margin-bottom: 6px;
+}
+.nav-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 400;
+  border: 1px solid transparent;
+  position: relative;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.nav-item:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+.nav-item.active {
+  background: var(--cyan-dim);
+  color: var(--cyan);
+  border-color: rgba(0,212,255,0.2);
+  font-weight: 500;
+}
+.nav-icon {
+  font-size: 14px; flex-shrink: 0; width: 16px; text-align: center;
+}
+.nav-badge {
+  margin-left: auto; flex-shrink: 0;
+  background: var(--bg-base);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 10px; font-family: var(--mono);
+  padding: 1px 5px; border-radius: 3px;
+}
+
+/* ─── MAIN CONTENT ─────────────────────────────────────────────── */
+.main {
+  margin-left: var(--sidebar-w);
+  flex: 1;
+  padding: 24px;
+  max-width: 100%;
+}
+
+/* ─── PAGES ─────────────────────────────────────────────────── */
+.page { display: none; }
+.page.active { display: block; }
+
+/* ─── DASHBOARD ─────────────────────────────────────────────── */
+.page-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 24px;
+}
+.page-title { font-size: 20px; font-weight: 600; letter-spacing: -0.3px; }
+.page-subtitle { font-size: 13px; color: var(--text-secondary); margin-top: 3px; }
+.page-actions { display: flex; gap: 8px; }
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.kpi-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color var(--transition), background var(--transition);
+}
+.kpi-card:hover { border-color: var(--cyan); background: var(--bg-panel-alt); }
+.kpi-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 2px;
+}
+.kpi-card.cyan::before { background: var(--cyan); }
+.kpi-card.green::before { background: var(--green); }
+.kpi-card.amber::before { background: var(--amber); }
+.kpi-card.red::before { background: var(--red); }
+.kpi-card.purple::before { background: var(--purple); }
+.kpi-label { font-size: 11px; color: var(--text-secondary); font-weight: 500; margin-bottom: 8px; }
+.kpi-value {
+  font-size: 26px; font-weight: 700; font-family: var(--mono);
+  letter-spacing: -1px; line-height: 1;
+}
+.kpi-card.cyan .kpi-value { color: var(--cyan); }
+.kpi-card.green .kpi-value { color: var(--green); }
+.kpi-card.amber .kpi-value { color: var(--amber); }
+.kpi-card.red .kpi-value { color: var(--red); }
+.kpi-card.purple .kpi-value { color: var(--purple); }
+.kpi-delta {
+  font-size: 11px; margin-top: 6px;
+  display: flex; align-items: center; gap: 4px;
+}
+.delta-up { color: var(--green); }
+.delta-down { color: var(--red); }
+
+.dash-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.dash-grid-wide { grid-column: span 2; }
+.chart-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+.chart-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px;
+}
+.chart-title { font-size: 13px; font-weight: 600; }
+.chart-subtitle { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+.chart-area {
+  position: relative;
+  width: 100%;
+}
+.chart-area canvas { display: block; width: 100% !important; }
+.chart-legend {
+  display: flex; gap: 12px; flex-wrap: wrap;
+  margin-top: 10px;
+}
+.legend-item {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 11px; color: var(--text-secondary);
+}
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+/* ─── INSIGHTS PANEL ─────────────────────────────────────────── */
+.insights-panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+.insights-header {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 14px;
+}
+.insights-icon {
+  width: 24px; height: 24px;
+  background: rgba(167,139,250,0.15);
+  border: 1px solid rgba(167,139,250,0.3);
+  border-radius: 5px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px;
+}
+.insight-item {
+  display: flex; gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-light);
+}
+.insight-item:last-child { border-bottom: none; padding-bottom: 0; }
+.insight-severity {
+  width: 4px; border-radius: 2px; flex-shrink: 0;
+  align-self: stretch; min-height: 36px;
+}
+.sev-warn { background: var(--amber); }
+.sev-info { background: var(--cyan); }
+.sev-ok   { background: var(--green); }
+.sev-crit { background: var(--red); }
+.insight-title { font-size: 12px; font-weight: 600; margin-bottom: 3px; }
+.insight-desc { font-size: 11px; color: var(--text-secondary); line-height: 1.5; }
+
+/* ─── REPORT PAGE ─────────────────────────────────────────────── */
+.report-toolbar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius) var(--radius) 0 0;
+  flex-wrap: wrap;
+}
+.filter-input {
+  background: var(--bg-base);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  padding: 6px 10px;
+  font-size: 12px;
+  outline: none;
+  min-width: 180px;
+  transition: border-color var(--transition);
+}
+.filter-input:focus { border-color: var(--cyan); }
+.filter-input::placeholder { color: var(--text-muted); }
+.filter-select {
+  background: var(--bg-base);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  padding: 6px 10px;
+  font-size: 12px;
+  outline: none;
+  cursor: pointer;
+}
+.filter-select:focus { border-color: var(--cyan); }
+.toolbar-spacer { flex: 1; }
+.row-count {
+  font-size: 11px; color: var(--text-muted);
+  font-family: var(--mono);
+}
+
+.table-wrap {
+  overflow-x: auto;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 var(--radius) var(--radius);
+  max-height: 520px;
+  overflow-y: auto;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+thead {
+  position: sticky; top: 0; z-index: 10;
+  background: var(--bg-panel-alt);
+}
+thead th {
+  padding: 10px 12px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  font-size: 11px;
+  letter-spacing: 0.3px;
+}
+thead th:hover { color: var(--text-primary); }
+thead th.sorted-asc::after { content: ' ↑'; color: var(--cyan); }
+thead th.sorted-desc::after { content: ' ↓'; color: var(--cyan); }
+tbody tr {
+  border-bottom: 1px solid var(--border-light);
+  transition: background var(--transition);
+  cursor: pointer;
+}
+tbody tr:hover { background: var(--bg-hover); }
+tbody tr:last-child { border-bottom: none; }
+tbody td {
+  padding: 9px 12px;
+  color: var(--text-primary);
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.mono { font-family: var(--mono); font-size: 11px; }
+.badge {
+  display: inline-flex; align-items: center;
+  padding: 2px 7px;
+  border-radius: 3px;
+  font-size: 10px; font-weight: 600; font-family: var(--mono);
+}
+.badge-green { background: rgba(57,211,83,0.12); color: var(--green); border: 1px solid rgba(57,211,83,0.25); }
+.badge-amber { background: rgba(255,184,0,0.12); color: var(--amber); border: 1px solid rgba(255,184,0,0.25); }
+.badge-red   { background: rgba(255,74,74,0.12);  color: var(--red);   border: 1px solid rgba(255,74,74,0.25); }
+.badge-cyan  { background: rgba(0,212,255,0.12);  color: var(--cyan);  border: 1px solid rgba(0,212,255,0.25); }
+.badge-purple{ background: rgba(167,139,250,0.12);color: var(--purple);border: 1px solid rgba(167,139,250,0.25); }
+.badge-gray  { background: rgba(139,148,158,0.12);color: var(--text-secondary); border: 1px solid var(--border); }
+
+.highlight { color: var(--cyan); }
+.text-warn  { color: var(--amber); }
+.text-ok    { color: var(--green); }
+.text-err   { color: var(--red); }
+
+/* ─── REPORT INSIGHTS BAR ─────────────────────────────────────── */
+.report-insights {
+  background: linear-gradient(90deg, rgba(167,139,250,0.06), transparent);
+  border: 1px solid rgba(167,139,250,0.2);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  display: flex; gap: 16px; align-items: flex-start;
+  flex-wrap: wrap;
+}
+.ri-icon { color: var(--purple); font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+.ri-content { flex: 1; }
+.ri-title { font-size: 12px; font-weight: 600; color: var(--purple); margin-bottom: 6px; }
+.ri-points { list-style: none; }
+.ri-points li {
+  font-size: 12px; color: var(--text-secondary);
+  padding: 2px 0;
+  padding-left: 12px;
+  position: relative;
+  line-height: 1.6;
+}
+.ri-points li::before {
+  content: '·'; position: absolute; left: 0;
+  color: var(--purple);
+}
+
+/* ─── UPLOAD MODAL ─────────────────────────────────────────────── */
+.modal-backdrop {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(4px);
+  display: none; align-items: center; justify-content: center;
+}
+.modal-backdrop.open { display: flex; }
+.modal {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  width: 500px; max-width: 90vw;
+  position: relative;
+}
+.modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 20px;
+}
+.modal-title { font-size: 16px; font-weight: 600; }
+.modal-close {
+  width: 28px; height: 28px;
+  border-radius: 5px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-secondary);
+  font-size: 16px;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.modal-close:hover { background: var(--bg-hover); color: var(--text-primary); }
+.drop-zone {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 36px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all var(--transition);
+  margin-bottom: 16px;
+}
+.drop-zone:hover, .drop-zone.drag-over {
+  border-color: var(--cyan);
+  background: var(--cyan-dim);
+}
+.drop-icon { font-size: 32px; margin-bottom: 10px; }
+.drop-label { font-size: 14px; font-weight: 500; margin-bottom: 6px; }
+.drop-hint { font-size: 12px; color: var(--text-secondary); }
+.upload-formats {
+  display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 20px;
+}
+.format-tag {
+  font-family: var(--mono); font-size: 11px;
+  background: var(--bg-base); border: 1px solid var(--border);
+  border-radius: 3px; padding: 2px 7px; color: var(--text-muted);
+}
+.upload-options { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+.upload-option {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.upload-option:hover { border-color: var(--cyan); background: var(--cyan-dim); }
+.upload-option input { width: 14px; height: 14px; accent-color: var(--cyan); }
+.upload-option-label { font-size: 13px; }
+.upload-option-desc { font-size: 11px; color: var(--text-secondary); margin-top: 1px; }
+.progress-bar-wrap {
+  background: var(--bg-base); border-radius: 3px; height: 4px;
+  overflow: hidden; margin-bottom: 16px; display: none;
+}
+.progress-bar {
+  height: 100%; background: var(--cyan);
+  border-radius: 3px;
+  width: 0%;
+  transition: width 0.3s ease;
+}
+.modal-footer { display: flex; gap: 8px; justify-content: flex-end; }
+
+/* ─── EMPTY STATE ─────────────────────────────────────────────── */
+.empty-state {
+  text-align: center; padding: 48px 24px;
+  color: var(--text-muted);
+}
+.empty-icon { font-size: 36px; margin-bottom: 12px; opacity: 0.5; }
+.empty-title { font-size: 14px; font-weight: 500; color: var(--text-secondary); margin-bottom: 6px; }
+.empty-desc { font-size: 12px; color: var(--text-muted); }
+
+/* ─── NOTIFICATION TOAST ─────────────────────────────────────── */
+.toast-wrap {
+  position: fixed; bottom: 20px; right: 20px; z-index: 999;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.toast {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  font-size: 13px;
+  min-width: 260px; max-width: 360px;
+  display: flex; align-items: center; gap: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  animation: slideIn 0.2s ease;
+}
+.toast.success { border-left: 3px solid var(--green); }
+.toast.warn    { border-left: 3px solid var(--amber); }
+.toast.error   { border-left: 3px solid var(--red); }
+.toast.info    { border-left: 3px solid var(--cyan); }
+@keyframes slideIn { from { transform: translateX(20px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* ─── MISC ─────────────────────────────────────────────────── */
+.section-spacer { margin-bottom: 20px; }
+.flex-between { display: flex; align-items: center; justify-content: space-between; }
+.chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 8px;
+  border-radius: 3px; font-size: 11px;
+  background: var(--bg-base); border: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+.page-breadcrumb {
+  font-size: 12px; color: var(--text-muted);
+  margin-bottom: 6px;
+  display: flex; align-items: center; gap: 6px;
+}
+.page-breadcrumb span { cursor: pointer; }
+.page-breadcrumb span:hover { color: var(--cyan); }
+.separator { color: var(--text-muted); }
+.maintec-logo {
+  width: 72px;
+  height: 52px;
+  object-fit: contain;
+  display: block;
+  flex-shrink: 0;
+}
+/* Responsive */
+@media (max-width: 900px) {
+  .sidebar { display: none; }
+  .main { margin-left: 0; padding: 16px; }
+  .dash-grid { grid-template-columns: 1fr; }
+  .dash-grid-wide { grid-column: span 1; }
+  .kpi-grid { grid-template-columns: 1fr 1fr; }
+}
+
+/* Reduce motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}
+
+/* Print */
+@media print {
+  .sidebar, .topbar, .topbar-search, .topbar-right .btn, .modal-backdrop { display: none !important; }
+  .main { margin-left: 0; }
+  table { page-break-inside: auto; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════ TOPBAR ═══════════════════ -->
+<header class="topbar">
+  <div class="topbar-logo">
+    <img
+      class="maintec-logo"
+      src="maintec-technologies-squarelogo-1425971441718.png"
+      alt="Maintec Technologies"
+    >
+    <div class="logo-text">MainSensei <span>SMF</span></div>
+  </div>
+
+  <div class="topbar-search">
+    <span class="search-icon">⌕</span>
+    <input type="text" id="globalSearch" placeholder="Search reports, jobs, datasets…" oninput="globalSearchFn(this.value)">
+  </div>
+
+  <div class="topbar-right">
+    <span class="status-dot"></span>
+    <span class="status-label">Live</span>
+    <button class="btn btn-ghost" onclick="showPage('dashboard')">Dashboard</button>
+    <button class="btn btn-primary" onclick="openUploadModal()">⬆ Upload SMF</button>
+    <div class="avatar" title="User Profile">AD</div>
+  </div>
+</header>
+
+<!-- ═══════════════════ APP BODY ═══════════════════ -->
+<div class="app-body">
+
+<!-- ─── SIDEBAR ───────────────────────────────────── -->
+<nav class="sidebar" id="sidebar">
+
+  <!-- Core Navigation -->
+  <div class="sidebar-section">
+    <div class="sidebar-section-label">Overview</div>
+
+    <div class="nav-item active" onclick="showPage('dashboard')" id="nav-dashboard">
+      <span class="nav-icon">▦</span> Executive Dashboard
+    </div>
+
+    <div class="nav-item" onclick="showPage('upload-history')" id="nav-upload-history">
+      <span class="nav-icon">↑</span> Upload History
+      <span class="nav-badge">3</span>
+    </div>
+  </div>
+
+  <!-- JES / Batch -->
+  <div class="sidebar-section">
+    <div class="sidebar-section-label">JES / Batch</div>
+
+    <div class="nav-item" onclick="showReport('smf30-task-counts')" id="nav-smf30-task-counts">
+      <span class="nav-icon">≡</span> Task Counts by Type
+      <span class="nav-badge">30</span>
+    </div>
+
+    <div class="nav-item" onclick="showReport('smf30-completion')" id="nav-smf30-completion">
+      <span class="nav-icon">✓</span> Job Completion Codes
+      <span class="nav-badge">30</span>
+    </div>
+
+    <div class="nav-item" onclick="showReport('smf30-timeof-day')" id="nav-smf30-timeof-day">
+      <span class="nav-icon">◷</span> Job Stats by Time of Day
+      <span class="nav-badge">30</span>
+    </div>
+
+    <div class="nav-item" onclick="showReport('smf30-chargeback')" id="nav-smf30-chargeback">
+      <span class="nav-icon">$</span> Chargeback Report
+      <span class="nav-badge">30</span>
+    </div>
+
+    <div class="nav-item" onclick="showReport('smf30-excp')" id="nav-smf30-excp">
+      <span class="nav-icon">⚡</span> EXCP / Address Space
+      <span class="nav-badge">30</span>
+    </div>
+
+    <div class="nav-item" onclick="showReport('smf16-dfsort')" id="nav-smf16-dfsort">
+      <span class="nav-icon">⇄</span> DFSORT Statistics
+      <span class="nav-badge">16</span>
+    </div>
+
+    <div class="nav-item" onclick="showReport('smf208-syncsort')" id="nav-smf208-syncsort">
+      <span class="nav-icon">⇄</span> Syncsort Log
+      <span class="nav-badge">208</span>
+    </div>
+  </div>
+
+  <!-- CICS -->
+  <div class="sidebar-section">
+    <div class="sidebar-section-label">CICS</div>
+    <div class="nav-item" onclick="showReport('smf110-perf')" id="nav-smf110-perf">
+      <span class="nav-icon">◈</span> Performance Records
+      <span class="nav-badge">110</span>
+    </div>
+    <div class="nav-item" onclick="showReport('smf110-timing')" id="nav-smf110-timing">
+      <span class="nav-icon">◷</span> Transaction Timing
+      <span class="nav-badge">110</span>
+    </div>
+    <div class="nav-item" onclick="showReport('smf110-keyval')" id="nav-smf110-keyval">
+      <span class="nav-icon">≈</span> Socket Activity (KV)
+      <span class="nav-badge">110</span>
+    </div>
+  </div>
+
+  <!-- DB2 -->
+  <div class="sidebar-section">
+    <div class="sidebar-section-label">DB2</div>
+    <div class="nav-item" onclick="showReport('smf100-addrspace')" id="nav-smf100-addrspace">
+      <span class="nav-icon">◻</span> Address Space Stats
+      <span class="nav-badge">100</span>
+    </div>
+    <div class="nav-item" onclick="showReport('smf100-ifc')" id="nav-smf100-ifc">
+      <span class="nav-icon">◈</span> IFC Destination Stats
+      <span class="nav-badge">100</span>
+    </div>
+    <div class="nav-item" onclick="showReport('smf101-sql')" id="nav-smf101-sql">
+      <span class="nav-icon">⊞</span> SQL Statement Counts
+      <span class="nav-badge">101</span>
+    </div>
+    <div class="nav-item" onclick="showReport('smf101-plan')" id="nav-smf101-plan">
+      <span class="nav-icon">▤</span> Plan Statistics
+      <span class="nav-badge">101</span>
+    </div>
+    <div class="nav-item" onclick="showReport('smf101-response')" id="nav-smf101-response">
+      <span class="nav-icon">◷</span> Response Time Report
+      <span class="nav-badge">101</span>
+    </div>
+    <div class="nav-item" onclick="showReport('smf102-dataset')" id="nav-smf102-dataset">
+      <span class="nav-icon">⊟</span> Dataset IO Stats
+      <span class="nav-badge">102</span>
+    </div>
+    <div class="nav-item" onclick="showReport('smf102-storedproc')" id="nav-smf102-storedproc">
+      <span class="nav-icon">λ</span> Stored Procedures
+      <span class="nav-badge">102</span>
+    </div>
+    <div class="nav-item" onclick="showReport('smf102-v10compat')" id="nav-smf102-v10compat">
+      <span class="nav-icon">⚠</span> V10 Incompatibility
+      <span class="nav-badge">102</span>
+    </div>
+    <div class="nav-item" onclick="showReport('smf102-v11compat')" id="nav-smf102-v11compat">
+      <span class="nav-icon">⚠</span> V11 Incompatibility
+      <span class="nav-badge">102</span>
+    </div>
+    <div class="nav-item" onclick="showReport('smf102-tableaudit')" id="nav-smf102-tableaudit">
+      <span class="nav-icon">⊞</span> Table Access Audit
+      <span class="nav-badge">102</span>
+    </div>
+  </div>
+
+  <!-- Storage / Datasets -->
+  <div class="sidebar-section">
+    <div class="sidebar-section-label">Storage &amp; Datasets</div>
+    <div class="nav-item" onclick="showReport('smf14-dsusage')" id="nav-smf14-dsusage">
+      <span class="nav-icon">⊟</span> Dataset Usage
+      <span class="nav-badge">14</span>
+    </div>
+    <div class="nav-item" onclick="showReport('smf42-dsperf')" id="nav-smf42-dsperf">
+      <span class="nav-icon">⊟</span> DFSMS Closing Stats
+      <span class="nav-badge">42</span>
+    </div>
+    <div class="nav-item" onclick="showReport('smf64-vsam')" id="nav-smf64-vsam">
+      <span class="nav-icon">⊟</span> VSAM File Statistics
+      <span class="nav-badge">64</span>
+    </div>
+    <div class="nav-item" onclick="showReport('smf94-tape')" id="nav-smf94-tape">
+      <span class="nav-icon">⊞</span> Tape Library Stats
+      <span class="nav-badge">94</span>
+    </div>
+    <div class="nav-item" onclick="showReport('smf15-17-ds')" id="nav-smf15-17-ds">
+      <span class="nav-icon">✎</span> Dataset Updates &amp; Deletes
+      <span class="nav-badge">15/17</span>
+    </div>
+  </div>
+
+  <!-- RMF / Hardware -->
+  <div class="sidebar-section">
+    <div class="sidebar-section-label">RMF / Hardware</div>
+    <div class="nav-item" onclick="showReport('smf70-cpu')" id="nav-smf70-cpu">
+      <span class="nav-icon">▣</span> CPU Processor Activity
+      <span class="nav-badge">70</span>
+    </div>
+    <div class="nav-item" onclick="showReport('smf73-channel')" id="nav-smf73-channel">
+      <span class="nav-icon">⟺</span> Channel Profile
+      <span class="nav-badge">73</span>
+    </div>
+    <div class="nav-item" onclick="showReport('smf74-coupling')" id="nav-smf74-coupling">
+      <span class="nav-icon">⊕</span> Coupling Activity
+      <span class="nav-badge">74</span>
+    </div>
+    <div class="nav-item" onclick="showReport('smf113-hw')" id="nav-smf113-hw">
+      <span class="nav-icon">▣</span> Hardware Counters
+      <span class="nav-badge">113</span>
+    </div>
+  </div>
+
+  <!-- Security -->
+  <div class="sidebar-section">
+    <div class="sidebar-section-label">Security</div>
+    <div class="nav-item" onclick="showReport('smf80-racf')" id="nav-smf80-racf">
+      <span class="nav-icon">⚿</span> RACF Events Log
+      <span class="nav-badge">80</span>
+    </div>
+    <div class="nav-item" onclick="showReport('smf89-racfstats')" id="nav-smf89-racfstats">
+      <span class="nav-icon">⚿</span> RACF Usage Statistics
+      <span class="nav-badge">89</span>
+    </div>
+    <div class="nav-item" onclick="showReport('smf14-racf-ds')" id="nav-smf14-racf-ds">
+      <span class="nav-icon">⊟</span> Dataset Access w/ RACF
+      <span class="nav-badge">14/30</span>
+    </div>
+  </div>
+
+  <!-- Network / FTP -->
+  <div class="sidebar-section">
+    <div class="sidebar-section-label">Network &amp; FTP</div>
+    <div class="nav-item" onclick="showReport('smf6-printway')" id="nav-smf6-printway">
+      <span class="nav-icon">⊟</span> PrintWay Event Log
+      <span class="nav-badge">6</span>
+    </div>
+    <div class="nav-item" onclick="showReport('smf119-ftp-host')" id="nav-smf119-ftp-host">
+      <span class="nav-icon">↕</span> FTP Transfers by Host
+      <span class="nav-badge">119</span>
+    </div>
+    <div class="nav-item" onclick="showReport('smf119-ftp-detail')" id="nav-smf119-ftp-detail">
+      <span class="nav-icon">↕</span> FTP Transfer Detail
+      <span class="nav-badge">119</span>
+    </div>
+    <div class="nav-item" onclick="showReport('smf119-sftp')" id="nav-smf119-sftp">
+      <span class="nav-icon">⚿</span> OpenSSH SFTP Transfers
+      <span class="nav-badge">119</span>
+    </div>
+    <div class="nav-item" onclick="showReport('smf119-tcp')" id="nav-smf119-tcp">
+      <span class="nav-icon">⊕</span> TCP Connections
+      <span class="nav-badge">119</span>
+    </div>
+  </div>
+
+  <!-- Middleware / MQ / WAS -->
+  <div class="sidebar-section">
+    <div class="sidebar-section-label">Middleware</div>
+    <div class="nav-item" onclick="showReport('smf115-mq-bufpool')" id="nav-smf115-mq-bufpool">
+      <span class="nav-icon">▦</span> MQ Buffer Pool Stats
+      <span class="nav-badge">115</span>
+    </div>
+    <div class="nav-item" onclick="showReport('smf116-mq-cpu')" id="nav-smf116-mq-cpu">
+      <span class="nav-icon">▦</span> MQ Queue CPU Time
+      <span class="nav-badge">116</span>
+    </div>
+    <div class="nav-item" onclick="showReport('smf120-java')" id="nav-smf120-java">
+      <span class="nav-icon">☕</span> WebSphere Java CPU
+      <span class="nav-badge">120</span>
+    </div>
+    <div class="nav-item" onclick="showReport('smf120-servlet')" id="nav-smf120-servlet">
+      <span class="nav-icon">☕</span> WebSphere Servlet Times
+      <span class="nav-badge">120</span>
+    </div>
+  </div>
+
+  <!-- Other -->
+  <div class="sidebar-section">
+    <div class="sidebar-section-label">Other</div>
+    <div class="nav-item" onclick="showReport('smf220-rsd')" id="nav-smf220-rsd">
+      <span class="nav-icon">⊟</span> RSD Folder Audit
+      <span class="nav-badge">220</span>
+    </div>
+  </div>
+
+</nav>
+
+<!-- ─── MAIN CONTENT ─────────────────────────────── -->
+<main class="main" id="mainContent">
+
+<!-- ═══════════════════════════════════════════════════
+     PAGE: DASHBOARD
+     ═══════════════════════════════════════════════════ -->
+<div class="page active" id="page-dashboard">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Executive Overview</div>
+      <div class="page-subtitle">z/OS SMF Analytics · Last upload: 08/24/10 · All systems nominal</div>
+    </div>
+    <div class="page-actions">
+      <button class="btn btn-ghost" onclick="exportDashboard()">⬇ Export PDF</button>
+      <button class="btn btn-primary" onclick="openUploadModal()">⬆ Upload SMF</button>
+    </div>
+  </div>
+
+  <!-- KPI TILES -->
+  <div class="kpi-grid">
+    <div class="kpi-card cyan" onclick="showReport('smf30-task-counts')">
+      <div class="kpi-label">Total Tasks Logged</div>
+      <div class="kpi-value">3,772</div>
+      <div class="kpi-delta delta-up">↑ 12% vs prior period</div>
+    </div>
+    <div class="kpi-card green" onclick="showReport('smf30-completion')">
+      <div class="kpi-label">Jobs Completed</div>
+      <div class="kpi-value">46</div>
+      <div class="kpi-delta delta-up">↑ Completion rate 91%</div>
+    </div>
+    <div class="kpi-card amber" onclick="showReport('smf30-completion')">
+      <div class="kpi-label">Abend / Error Steps</div>
+      <div class="kpi-value">5</div>
+      <div class="kpi-delta delta-down">↑ 2 new since yesterday</div>
+    </div>
+    <div class="kpi-card red" onclick="showReport('smf80-racf')">
+      <div class="kpi-label">RACF Auth Failures</div>
+      <div class="kpi-value">3</div>
+      <div class="kpi-delta delta-down">⚠ Requires review</div>
+    </div>
+    <div class="kpi-card purple" onclick="showReport('smf101-sql')">
+      <div class="kpi-label">DB2 SQL Fetches</div>
+      <div class="kpi-value">95</div>
+      <div class="kpi-delta delta-up">5 transactions captured</div>
+    </div>
+    <div class="kpi-card cyan" onclick="showReport('smf119-ftp-detail')">
+      <div class="kpi-label">FTP Transfers</div>
+      <div class="kpi-value">7</div>
+      <div class="kpi-delta">1.5 GB largest file</div>
+    </div>
+    <div class="kpi-card green" onclick="showReport('smf30-chargeback')">
+      <div class="kpi-label">Chargeback Total (est.)</div>
+      <div class="kpi-value">$16.7K</div>
+      <div class="kpi-delta">200 jobs · 11/30/06</div>
+    </div>
+    <div class="kpi-card amber" onclick="showReport('smf70-cpu')">
+      <div class="kpi-label">Avg CPU Dispatch</div>
+      <div class="kpi-value">13.4%</div>
+      <div class="kpi-delta delta-up">86.2% wait time noted</div>
+    </div>
+  </div>
+
+  <!-- CHARTS ROW -->
+  <div class="dash-grid">
+    <!-- Elapsed Time by Work Type -->
+    <div class="chart-card dash-grid-wide">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Elapsed Time by Work Type (SMF 30)</div>
+          <div class="chart-subtitle">Hours consumed per job category · Grand total 1.05 hrs</div>
+        </div>
+        <button class="btn btn-ghost" style="font-size:11px;" onclick="showReport('smf30-task-counts')">View Report →</button>
+      </div>
+      <div class="chart-area" style="height:180px;">
+        <canvas id="chartWorkType"></canvas>
+      </div>
+      <div class="chart-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--cyan)"></div>Started Tasks</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--purple)"></div>TSO Sessions</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--amber)"></div>Batch Jobs</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>JES2/OMVS</div>
+      </div>
+    </div>
+
+    <!-- RACF Events Breakdown -->
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">RACF Event Outcomes (SMF 80)</div>
+          <div class="chart-subtitle">Auth results distribution</div>
+        </div>
+        <button class="btn btn-ghost" style="font-size:11px;" onclick="showReport('smf80-racf')">View →</button>
+      </div>
+      <div class="chart-area" style="height:160px;">
+        <canvas id="chartRacf"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Second Charts Row -->
+  <div class="dash-grid">
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">FTP Transfer Volumes (SMF 119)</div>
+          <div class="chart-subtitle">Data moved per transfer command</div>
+        </div>
+        <button class="btn btn-ghost" style="font-size:11px;" onclick="showReport('smf119-ftp-detail')">View →</button>
+      </div>
+      <div class="chart-area" style="height:160px;">
+        <canvas id="chartFtp"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">DB2 Response Times (SMF 101)</div>
+          <div class="chart-subtitle">Main elapsed seconds per transaction</div>
+        </div>
+        <button class="btn btn-ghost" style="font-size:11px;" onclick="showReport('smf101-response')">View →</button>
+      </div>
+      <div class="chart-area" style="height:160px;">
+        <canvas id="chartDb2Resp"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">MQ Buffer Pool Usage (SMF 115)</div>
+          <div class="chart-subtitle">Get page requests by pool</div>
+        </div>
+        <button class="btn btn-ghost" style="font-size:11px;" onclick="showReport('smf115-mq-bufpool')">View →</button>
+      </div>
+      <div class="chart-area" style="height:160px;">
+        <canvas id="chartMq"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- INSIGHTS PANEL -->
+  <div class="insights-panel">
+    <div class="insights-header">
+      <div class="insights-icon">✦</div>
+      <div>
+        <div class="chart-title">System Insights</div>
+        <div class="chart-subtitle">Auto-derived from uploaded SMF data</div>
+      </div>
+    </div>
+    <div class="insight-item">
+      <div class="insight-severity sev-crit"></div>
+      <div class="insight-body">
+        <div class="insight-title">RACF password failure on XH4AMGS job</div>
+        <div class="insight-desc">WITADM4 account triggered an invalid password event (SMF 80, 11:47). Review account status and confirm no unauthorized access attempt.</div>
+      </div>
+    </div>
+    <div class="insight-item">
+      <div class="insight-severity sev-warn"></div>
+      <div class="insight-body">
+        <div class="insight-title">S806 / S622 abends in batch jobs</div>
+        <div class="insight-desc">ASMX and TTAP01A jobs raised system abend codes S806 (module not found) and S622 (file allocation error) on 02/06/08. Investigate JCL and load module availability.</div>
+      </div>
+    </div>
+    <div class="insight-item">
+      <div class="insight-severity sev-warn"></div>
+      <div class="insight-body">
+        <div class="insight-title">High VSAM EXCP count on DLISET82</div>
+        <div class="insight-desc">DLISET82 recorded 303,715 EXCPs with 1.1M records and 1,273 CI splits. CI splits indicate reorganisation may be required to restore sequential performance.</div>
+      </div>
+    </div>
+    <div class="insight-item">
+      <div class="insight-severity sev-info"></div>
+      <div class="insight-body">
+        <div class="insight-title">CPU dispatch efficiency at 13.4% — normal for LPAR</div>
+        <div class="insight-desc">Processor 0002 shows 89.6% wait time; processor 0003 at 94.7%. High wait is consistent with I/O-bound workloads. No tuning action required at current thresholds.</div>
+      </div>
+    </div>
+    <div class="insight-item">
+      <div class="insight-severity sev-info"></div>
+      <div class="insight-body">
+        <div class="insight-title">DB2 V9/V10 incompatible features detected</div>
+        <div class="insight-desc">IFCID 366 reports SYSIBM.CHAR(decimal-expr) usage in DSNETS98 program — incompatible with DB2 V10 behaviour. Migration planning should address this before version upgrade.</div>
+      </div>
+    </div>
+    <div class="insight-item">
+      <div class="insight-severity sev-ok"></div>
+      <div class="insight-body">
+        <div class="insight-title">FTP transfers completed without errors</div>
+        <div class="insight-desc">All SMF 119 records show successful STOR/RETR completions. One 1.5 GB RETR took 84.96s — within acceptable bounds for image-type transfers on this stack.</div>
+      </div>
+    </div>
+  </div>
+</div><!-- /page-dashboard -->
+
+
+<!-- ═══════════════════════════════════════════════════
+     PAGE: UPLOAD HISTORY
+     ═══════════════════════════════════════════════════ -->
+<div class="page" id="page-upload-history">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Upload History</div>
+      <div class="page-subtitle">SMF dump files processed by this portal</div>
+    </div>
+    <button class="btn btn-primary" onclick="openUploadModal()">⬆ Upload SMF</button>
+  </div>
+  <div class="report-toolbar">
+    <span style="font-size:12px;color:var(--text-secondary);">3 files processed</span>
+    <div class="toolbar-spacer"></div>
+    <button class="btn btn-ghost" onclick="toast('History refreshed','info')">↻ Refresh</button>
+  </div>
+  <div class="table-wrap" style="border-top:1px solid var(--border);border-radius:0 0 var(--radius) var(--radius);">
+    <table>
+      <thead><tr>
+        <th>Filename</th><th>SMF Date</th><th>Uploaded</th><th>Size</th><th>Records</th><th>Status</th><th>Action</th>
+      </tr></thead>
+      <tbody>
+        <tr>
+          <td class="mono">SMF.GDG.D082410.G0042V00</td>
+          <td class="mono">08/24/10</td>
+          <td class="mono">Today 09:12</td>
+          <td class="mono">142 MB</td>
+          <td class="mono">48,221</td>
+          <td><span class="badge badge-green">Processed</span></td>
+          <td><button class="btn btn-ghost" style="padding:4px 8px;font-size:11px;" onclick="toast('Report set loaded','success')">Load Reports</button></td>
+        </tr>
+        <tr>
+          <td class="mono">SMF.ARCHIVE.D072413.SEQ</td>
+          <td class="mono">07/24/13</td>
+          <td class="mono">Yesterday 22:05</td>
+          <td class="mono">89 MB</td>
+          <td class="mono">31,007</td>
+          <td><span class="badge badge-green">Processed</span></td>
+          <td><button class="btn btn-ghost" style="padding:4px 8px;font-size:11px;" onclick="toast('Report set loaded','success')">Load Reports</button></td>
+        </tr>
+        <tr>
+          <td class="mono">SMF.DUMP.D062009.001</td>
+          <td class="mono">06/20/09</td>
+          <td class="mono">3 days ago</td>
+          <td class="mono">203 MB</td>
+          <td class="mono">72,480</td>
+          <td><span class="badge badge-amber">Partial</span></td>
+          <td><button class="btn btn-ghost" style="padding:4px 8px;font-size:11px;" onclick="toast('Reprocessing queued','info')">Reprocess</button></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════
+     REPORT PAGES — built dynamically by JS
+     ═══════════════════════════════════════════════════ -->
+<div id="dynamic-report-container"></div>
+
+</main>
+</div><!-- /app-body -->
+
+<!-- ═══════════════════ UPLOAD MODAL ═══════════════════ -->
+<div class="modal-backdrop" id="uploadModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Upload SMF Dump File</div>
+      <div class="modal-close" onclick="closeUploadModal()">✕</div>
+    </div>
+    <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()"
+         ondragover="handleDragOver(event)" ondrop="handleDrop(event)" ondragleave="handleDragLeave(event)">
+      <div class="drop-icon">⬆</div>
+      <div class="drop-label">Drop SMF file here or click to browse</div>
+      <div class="drop-hint" id="dropHint">Supports sequential and GDG datasets exported as flat files</div>
+    </div>
+    <input type="file" id="fileInput" style="display:none" accept=".smf,.dump,.gdg,.bin,.dat" onchange="handleFileSelect(this)">
+    <div class="upload-formats">
+      <span class="format-tag">.SMF</span>
+      <span class="format-tag">.DUMP</span>
+      <span class="format-tag">.GDG</span>
+      <span class="format-tag">.BIN</span>
+      <span class="format-tag">Sequential flat</span>
+    </div>
+    <div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;">Parse options</div>
+    <div class="upload-options">
+      <label class="upload-option">
+        <input type="radio" name="parseMode" value="auto" checked>
+        <div>
+          <div class="upload-option-label">Auto-detect record types</div>
+          <div class="upload-option-desc">Portal identifies SMF type codes and routes to appropriate report</div>
+        </div>
+      </label>
+      <label class="upload-option">
+        <input type="radio" name="parseMode" value="selective">
+        <div>
+          <div class="upload-option-label">Selective parse</div>
+          <div class="upload-option-desc">Choose specific SMF record types to process (faster for large files)</div>
+        </div>
+      </label>
+    </div>
+    <div class="progress-bar-wrap" id="progressWrap">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeUploadModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="simulateUpload()">Process File</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div class="toast-wrap" id="toastWrap"></div>
+
+<!-- ═══════════════════ SCRIPTS ═══════════════════ -->
+<script>
+/* ─── CHART.JS INLINE (lightweight bar/line via canvas) ─── */
+/* We draw charts manually to avoid CDN dependency */
+
+function drawBarChart(canvasId, labels, datasets, opts={}) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = canvas.offsetWidth || canvas.parentElement.offsetWidth || 400;
+  const h = canvas.parentElement.style.height ? parseInt(canvas.parentElement.style.height) - 40 : 140;
+  canvas.width = w * dpr; canvas.height = h * dpr;
+  canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, w, h);
+
+  const pad = { top: 10, right: 16, bottom: 36, left: 48 };
+  const chartW = w - pad.left - pad.right;
+  const chartH = h - pad.top - pad.bottom;
+
+  const allVals = datasets.flatMap(d => d.data);
+  const maxVal = Math.max(...allVals) * 1.12 || 1;
+
+  // Grid lines
+  ctx.strokeStyle = '#21293A'; ctx.lineWidth = 1;
+  const gridLines = 4;
+  for (let i = 0; i <= gridLines; i++) {
+    const y = pad.top + chartH - (i / gridLines) * chartH;
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left + chartW, y); ctx.stroke();
+    ctx.fillStyle = '#484F58'; ctx.font = '10px Inter'; ctx.textAlign = 'right';
+    const val = (i / gridLines * maxVal);
+    ctx.fillText(val >= 1000 ? (val/1000).toFixed(1)+'k' : val.toFixed(1), pad.left - 4, y + 3);
+  }
+
+  // Bars
+  const n = labels.length;
+  const groupW = chartW / n;
+  const barW = Math.min(groupW * 0.55 / datasets.length, 40);
+
+  datasets.forEach((ds, di) => {
+    ctx.fillStyle = ds.color;
+    ds.data.forEach((val, i) => {
+      const barH = (val / maxVal) * chartH;
+      const x = pad.left + i * groupW + groupW * 0.22 + di * (barW + 2);
+      const y = pad.top + chartH - barH;
+      // Rounded top
+      ctx.beginPath();
+      if (barH > 4) {
+        ctx.roundRect(x, y, barW, barH, [2, 2, 0, 0]);
+      } else {
+        ctx.rect(x, y, barW, barH);
+      }
+      ctx.fill();
+    });
+  });
+
+  // X labels
+  ctx.fillStyle = '#8B949E'; ctx.font = '10px Inter'; ctx.textAlign = 'center';
+  labels.forEach((lbl, i) => {
+    const x = pad.left + i * groupW + groupW / 2;
+    ctx.fillText(lbl.length > 10 ? lbl.slice(0,10)+'…' : lbl, x, pad.top + chartH + 14);
+  });
+}
+
+function drawLineChart(canvasId, labels, datasets, opts={}) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = canvas.offsetWidth || canvas.parentElement.offsetWidth || 400;
+  const h = parseInt(canvas.parentElement.style.height) - 20 || 140;
+  canvas.width = w * dpr; canvas.height = h * dpr;
+  canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, w, h);
+
+  const pad = { top: 8, right: 12, bottom: 30, left: 44 };
+  const chartW = w - pad.left - pad.right;
+  const chartH = h - pad.top - pad.bottom;
+
+  const allVals = datasets.flatMap(d => d.data);
+  const maxVal = Math.max(...allVals) * 1.15 || 1;
+  const minVal = 0;
+
+  // Grid
+  ctx.strokeStyle = '#21293A'; ctx.lineWidth = 1;
+  const gridLines = 3;
+  for (let i = 0; i <= gridLines; i++) {
+    const y = pad.top + chartH - (i / gridLines) * chartH;
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left + chartW, y); ctx.stroke();
+    ctx.fillStyle = '#484F58'; ctx.font = '9px JetBrains Mono'; ctx.textAlign = 'right';
+    const val = (i / gridLines * maxVal);
+    ctx.fillText(val >= 1 ? val.toFixed(3) : val.toFixed(4), pad.left - 3, y + 3);
+  }
+
+  // Lines
+  datasets.forEach(ds => {
+    const n = ds.data.length;
+    ctx.strokeStyle = ds.color; ctx.lineWidth = 2;
+    ctx.shadowColor = ds.color; ctx.shadowBlur = 4;
+    ctx.beginPath();
+    ds.data.forEach((val, i) => {
+      const x = pad.left + (i / (n - 1)) * chartW;
+      const y = pad.top + chartH - ((val - minVal) / (maxVal - minVal)) * chartH;
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // Dots
+    ctx.fillStyle = ds.color;
+    ds.data.forEach((val, i) => {
+      const x = pad.left + (i / (n - 1)) * chartW;
+      const y = pad.top + chartH - ((val - minVal) / (maxVal - minVal)) * chartH;
+      ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI * 2); ctx.fill();
+    });
+  });
+
+  // X labels
+  ctx.fillStyle = '#8B949E'; ctx.font = '9px Inter'; ctx.textAlign = 'center'; ctx.shadowBlur = 0;
+  const step = Math.max(1, Math.floor(labels.length / 5));
+  labels.forEach((lbl, i) => {
+    if (i % step === 0 || i === labels.length - 1) {
+      const x = pad.left + (i / (labels.length - 1)) * chartW;
+      ctx.fillText(lbl, x, pad.top + chartH + 14);
+    }
+  });
+}
+
+function drawDonut(canvasId, data, colors, labels) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const size = parseInt(canvas.parentElement.style.height) || 160;
+  canvas.width = size * dpr; canvas.height = size * dpr;
+  canvas.style.width = size + 'px'; canvas.style.height = size + 'px';
+  ctx.scale(dpr, dpr);
+  const cx = size / 2, cy = size / 2, r = size * 0.35, inner = size * 0.22;
+  const total = data.reduce((a, b) => a + b, 0);
+  let start = -Math.PI / 2;
+  data.forEach((val, i) => {
+    const sweep = (val / total) * 2 * Math.PI;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, start, start + sweep);
+    ctx.arc(cx, cy, inner, start + sweep, start, true);
+    ctx.closePath();
+    ctx.fillStyle = colors[i];
+    ctx.shadowColor = colors[i]; ctx.shadowBlur = 6;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    start += sweep;
+  });
+  // Center label
+  ctx.fillStyle = '#E6EDF3'; ctx.font = 'bold 13px Inter'; ctx.textAlign = 'center';
+  ctx.fillText(total, cx, cy + 2);
+  ctx.font = '10px Inter'; ctx.fillStyle = '#8B949E';
+  ctx.fillText('events', cx, cy + 15);
+
+  // Legend on right
+  ctx.textAlign = 'left';
+  const lx = r * 2 + 20 + 10;
+  labels.forEach((lbl, i) => {
+    const ly = cy - (labels.length - 1) * 10 + i * 22;
+    ctx.fillStyle = colors[i];
+    ctx.fillRect(lx, ly - 6, 8, 8);
+    ctx.fillStyle = '#8B949E'; ctx.font = '10px Inter';
+    ctx.fillText(lbl + ' (' + data[i] + ')', lx + 12, ly + 2);
+  });
+}
+
+function initCharts() {
+  // Work Type Bar
+  drawBarChart('chartWorkType',
+    ['Started Tasks', 'TSO Sessions', 'Batch Jobs', 'JES2', 'OMVS'],
+    [
+      { data: [2626.65, 822.98, 322.09, 314.39, 7.70], color: '#00D4FF' }
+    ]
+  );
+  // RACF donut
+drawDonut('chartRacf',
+  [4, 2, 1],
+  ['#2F6B8A', '#8B5E5E', '#B08A57'],
+  ['Successful', 'Denied', 'Pwd Invalid']
+);
+  // FTP bar
+  drawBarChart('chartFtp',
+    ['STOR#1', 'STOR#2', 'STOR#3', 'RETR#1', 'RETR#2', 'DELE'],
+    [
+      { data: [0.3, 0.3, 0.03, 14.9, 1500, 0], color: '#A78BFA' }
+    ]
+  );
+  // DB2 response line
+  drawLineChart('chartDb2Resp',
+    ['T1', 'T2', 'T3', 'T4', 'T5'],
+    [
+      { data: [0.00566, 0.002626, 0.004865, 0.009695, 0.394685], color: '#00D4FF' }
+    ]
+  );
+  // MQ bar
+  drawBarChart('chartMq',
+    ['Pool 0', 'Pool 1', 'Pool 2', 'Pool 3'],
+    [
+      { data: [833658, 1318813, 2962, 198242], color: '#39D353' }
+    ]
+  );
+}
+
+window.addEventListener('load', () => { setTimeout(initCharts, 100); });
+window.addEventListener('resize', () => { setTimeout(initCharts, 100); });
+
+/* ─── REPORT DATA DEFINITIONS ─────────────────────────── */
+
+const REPORTS = {
+
+  'smf30-task-counts': {
+    title: 'Task Counts by Type',
+    smf: 'SMF 30',
+    subtitle: 'Elapsed time and task counts grouped by work type',
+    insights: [
+      'Started Tasks account for 69.6% of total elapsed time (2,626 sec), indicating long-running system address spaces.',
+      'TSO Sessions consume 21.8% of elapsed time — typical for an active interactive workload.',
+      'Batch Jobs contribute only 8.5% of elapsed time across 9 items, suggesting efficient batch scheduling.',
+      'Grand total 13 tasks across 3,771 seconds elapsed — no outliers detected.'
+    ],
+    cols: ['Work Type', 'Job Name', 'Items', 'Elapsed Secs', 'Elapsed Hrs'],
+    rows: [
+      ['JES2',          'Various',   '6',  '314.39',  '0.0874'],
+      ['OMVS',          'Various',   '3',  '7.70',    '0.0021'],
+      ['Started Tasks', 'Various',   '2',  '2,626.65','0.7296'],
+      ['TSO Sessions',  'Various',   '2',  '822.98',  '0.2286'],
+    ],
+    totals: ['Grand Total', '', '13', '3,771.72', '1.0477'],
+    badges: { 'Started Tasks': 'cyan', 'TSO Sessions': 'purple', 'JES2': 'gray', 'OMVS': 'gray' }
+  },
+
+  'smf30-completion': {
+    title: 'Job Completion Codes',
+    smf: 'SMF 30 Sub4',
+    subtitle: 'Step-level return and abend codes from batch execution',
+    insights: [
+      '3 out of 5 shown jobs completed with CC 0000 (clean). 2 carry system abends.',
+      'S806 on ASMX indicates a missing load module — check LINKLIST and STEPLIB concatenation.',
+      'S622 on TTAP01A is a file allocation failure — verify JCL DD statements and DASD availability.',
+      'CC=4 on SXFSTC is a warning-level code; review program-specific documentation for impact.'
+    ],
+    cols: ['Date', 'Time', 'Job Name', 'Step', 'Step Name', 'Hex Code', 'Formatted'],
+    rows: [
+      ['02/03/08','11:42','SMFDUMPS','1','DUMP1',   '0000',''],
+      ['02/03/08','11:46','SXFSTC',  '1','STEP1',   '0004','4'],
+      ['02/06/08','12:17','ASMX',    '1','ASM',     '0806','S806'],
+      ['02/06/08','13:08','TTAP01A', '1','SPFPROCE','0622', 'S622'],
+      ['02/06/08','12:39','ASMX',    '1','ASM',     '000C', '12'],
+    ],
+    badges: { '0000': 'green', '0004': 'amber', '0806': 'red', '0622': 'red', '000C': 'amber' },
+    badgeCol: 5
+  },
+
+  'smf30-timeof-day': {
+    title: 'Job Statistics by Time of Day',
+    smf: 'SMF 30',
+    subtitle: 'JES2 job throughput metrics per 15-minute interval',
+    insights: [
+      'Peak submission at 12:15 — 41 jobs, avg elapsed 14.4s. High-volume batch window confirmed.',
+      '05:45 interval shows unusually high tape mounts (13 per job) — investigate tape-heavy workloads in early morning.',
+      'Avg storage in 12:00–12:15 window is around 1,000 KB — consistent with small reporting/utility jobs.',
+      'No page swaps recorded across all intervals — workload is well within memory capacity.'
+    ],
+    cols: ['Begin Time', 'Job Count', 'Avg CPU (s)', 'Max CPU (s)', 'Avg Elapsed (s)', 'Max Elapsed (s)', 'Avg Storage (KB)', 'Tape Mounts'],
+    rows: [
+      ['05:00','4', '7.92','30.85','0.21','0.39', '2,364','2'],
+      ['05:45','1', '9.13','9.13', '15.35','15.35','1,596','13'],
+      ['12:00','34','0.11','0.77', '14.47','26.71','1,037','0'],
+      ['12:15','41','0.09','0.60', '14.44','20.94','967',  '0'],
+      ['*ALL*','112','0.49','30.85','10.64','26.71','1,010','0'],
+    ]
+  },
+
+  'smf30-chargeback': {
+    title: 'Chargeback Report',
+    smf: 'SMF 30-5',
+    subtitle: 'I/O and CPU cost allocations by job — 11/30/06',
+    insights: [
+      'DUMPSMF accounts for the largest single I/O chargeback at $384.89 — driven by 38,489 EXCPs.',
+      'AT122309 has the highest CPU rate charge at $1.63 despite low overall CPU time (0.31s).',
+      'PZ144431 is the most efficient job — only $0.98 total cost with 10.8s execution time.',
+      'Grand total I/O charge across 200 jobs: $16,761.56. CPU charges are significantly lower by comparison.'
+    ],
+    cols: ['Job Name', 'Prefix', 'Account', 'Total EXCPs', 'I/O Charge', 'CPU (s)', 'CPU Charge', 'Elapsed', 'Exec Time'],
+    rows: [
+      ['AT122309','AT12','','7,644',  '$76.44', '0.31','$1.63','00:00:05.28','00:00:04.73'],
+      ['DUMPSMF', 'DUMP','','38,489', '$384.89','1.07','$5.62','00:00:37.44','00:00:00.29'],
+      ['PZ144431','PZ14','','77',     '$0.77',  '0.04','$0.21','00:00:11.11','00:00:10.80'],
+    ]
+  },
+
+  'smf30-excp': {
+    title: 'EXCP / Address Space Activity',
+    smf: 'SMF 30',
+    subtitle: 'Device-level I/O block counts per job step',
+    insights: [
+      'BCA5148/BPXPRECP on SYS00002 generated 6,035 EXCPs — significantly higher than all other entries.',
+      'SMFSLRD SORT and M99RPT12 show zero block counts on SYSOUT — typical for print/spool output.',
+      'High EXCP counts on SYS00002 vs SYS00001 (1 EXCP) for the same job suggests unbalanced I/O across DD names.'
+    ],
+    cols: ['Date', 'Time', 'SID', 'Job Name', 'Program', 'Step', 'JES #', 'Device', 'DD Name', 'Block Count'],
+    rows: [
+      ['07/19/08','06:00:03','DEV1','BCA5148', 'BPXPRECP','STEP1','STC07283','32','SYS00001','1'],
+      ['07/19/08','06:00:03','DEV1','BCA5148', 'BPXPRECP','STEP1','STC07283','32','SYS00002','6,035'],
+      ['07/19/08','06:00:14','DEV1','SMFSLRD', 'SORT',    'SORT', 'STC07285','0', 'SYSOUT',  '0'],
+      ['07/19/08','06:01:05','DEV1','M99RPT12','SORT',    'STP01','JOB07284','0', 'SYSOUT',  '0'],
+    ]
+  },
+
+  'smf16-dfsort': {
+    title: 'DFSORT Statistics',
+    smf: 'SMF 16 + 30',
+    subtitle: 'Sort invocations, I/O type bits, and invoking programs',
+    insights: [
+      'BACTXREF invokes DFSORT twice via BR015200 with type bits 10100000 — both E15 and E35 exits active.',
+      'HREPUMUL uses ICEGENER (copy-only) with no exit routines — pure copy operation.',
+      'JZV550DU calls ICETOOL indicating multi-function sort — check for SPLICE or STATS operators.',
+      'JZU1ICF3 via IKJEFT1B suggests a TSO-driven sort — confirm interactively submitted batch is expected.'
+    ],
+    cols: ['System', 'Date', 'Time', 'I/O Type Bits', 'E15', 'E32', 'E35', 'Flags', 'Job Name', 'Program'],
+    rows: [
+      ['TN01','05-20-12','03:30:30','10100000','1','0','1','00000110','BACTXREF','BR015200'],
+      ['TN01','05-20-12','03:30:30','10100000','1','0','1','00000110','BACTXREF','BR015200'],
+      ['TN01','05-20-12','03:40:23','00010100','0','0','0','00000100','HREPUMUL','ICEGENER'],
+      ['TN01','05-20-12','03:30:00','10100000','1','0','1','00100110','JZU1ICF3','IKJEFT1B'],
+      ['TN01','05-20-12','03:55:52','00110100','0','0','1','00000100','JZV550DU','ICETOOL'],
+    ]
+  },
+
+  'smf208-syncsort': {
+    title: 'Syncsort Log',
+    smf: 'SMF 208',
+    subtitle: 'CPU time and data volumes for Syncsort invocations — 01/29/11',
+    insights: [
+      'T0E2138X U2 step is the most CPU-intensive: 5 minutes 1 second for 39 GB — check sort efficiency.',
+      'UCDD130X STEP0003 processed 16.58 GB in 1m24s via ICEGENER — high throughput copy operation.',
+      'BG7S92 S018 processed 4.53 GB in just 2 seconds — likely a disk-to-disk copy with no sort logic.',
+      'Grand total across 633 items: 40 minutes CPU time for 397 GB data.'
+    ],
+    cols: ['Date', 'Time', 'Job Name', 'Step', 'Invoking Pgm', 'CPU Time', 'GB', 'Sort Rate (XGB)'],
+    rows: [
+      ['01/29/11','15:30:46','AJKGAU0A','UTEP99',  'ICEGENER','00:00:00.01','0.01', '00:00:01.00'],
+      ['01/29/11','15:35:29','T0E9600C','P010',     '',        '00:00:00.04','0.01', '00:00:04.00'],
+      ['01/29/11','10:19:41','TSTSRP',  'AFGSRP80','',        '00:00:00.05','0.01', '00:00:05.00'],
+      ['01/29/11','15:15:33','AJKGLT1A','LTMODALL','',        '00:00:00.06','0.02', '00:00:03.00'],
+      ['01/28/11','23:51:09','BG7S92',  'S018',    'ICEGENER','00:00:02.00','4.53', '00:00:00.44'],
+      ['01/29/11','15:39:09','T0E2138X','UCP',      'ICEGENER','00:01:04.78','11.69','00:00:05.54'],
+      ['01/29/11','17:29:44','UCDD130X','STEP0003', 'ICEGENER','00:01:24.75','16.58','00:00:05.11'],
+      ['01/29/11','15:17:24','T0E2138X','U2',       '',        '00:05:01.29','39.26','00:00:07.67'],
+    ]
+  },
+
+  'smf110-perf': {
+    title: 'CICS Performance Records',
+    smf: 'SMF 110 Sub1',
+    subtitle: 'CICS monitoring data — transaction-level performance — 08/24/10',
+    insights: [
+      'CRSQ transactions routed to DFHCRQ are CICS CPS Manager requests — multiple instances within same second indicate active workload.',
+      'SBQE/SMM0100B running in CICSCPSM class — a batch queue trigger; verify scheduling alignment.',
+      'CWBG/DFHWBGB indicates Web Bridge Gateway activity — CICS-to-web traffic present.',
+      'CSKP/DFHRMXN3 classified under CICSMISC — utility or housekeeping transaction class.'
+    ],
+    cols: ['Date', 'Time', 'Type', 'Sub', 'Transaction', 'User ID', 'Start Time', 'Stop Time', 'Program', 'Service Class'],
+    rows: [
+      ['08/24/10','11:47:28','110','1','CRSQ','W24AA01','10:47:04','10:47:03.618166','DFHCRQ',  'CICSCPSM'],
+      ['08/24/10','11:48:17','110','1','CRSQ','W24AA01','10:47:03','10:47:03.448452','DFHCRQ',  'CICSCPSM'],
+      ['08/24/10','11:58:28','110','1','CRSQ','W24AA01','10:58:13','10:58:12.701763','DFHCRQ',  'CICSCPSM'],
+      ['08/24/10','11:31:37','110','1','CSKP','W24AA01','10:30:56','10:30:56.408895','DFHRMXN3','CICSMISC'],
+      ['08/24/10','11:42:06','110','1','CWBG','W24AA01','10:40:01','10:40:00.609872','DFHWBGB', 'CICSCPSM'],
+      ['08/24/10','12:00:18','110','1','SBQE','W24AA01','11:00:18','11:00:17.834936','SMM0100B','CICSCPSM'],
+    ]
+  },
+
+  'smf110-timing': {
+    title: 'CICS Transaction Timing',
+    smf: 'SMF 110 Sub1',
+    subtitle: 'Elapsed, dispatch, CPU and suspend times per transaction',
+    insights: [
+      'CISE/CICSVATM shows 30-minute elapsed with zero CPU — a long-running watch transaction (paged-out or waiting).',
+      'CEMT and CISM both show 15-minute intervals with no CPU or dispatch — idle monitor transactions.',
+      'NA20/CICSVTIN at 0.005s elapsed with 1.778ms CPU — a short, active transaction. Good throughput.',
+      'NA10/CICSVWRS shows 0.002s elapsed with zero CPU — extremely lightweight, likely a heartbeat.'
+    ],
+    cols: ['Date', 'Time', 'Transaction', 'CICS Region', 'Start', 'Stop', 'Elapsed', 'Dispatch', 'CPU', 'Suspend'],
+    rows: [
+      ['12/30/09','00:34:27','CEMT','CICSVIBK','23:19:26.698238','23:34:26.901300','15:00.203','0','0','0'],
+      ['12/30/09','00:22:54','CISE','CICSVATM','23:22:54.054290','23:52:54.197499','30:00.143','0','0','0'],
+      ['12/30/09','00:52:54','CISM','CICLUTIN','23:08:28.457983','23:23:28.657409','15:00.199','0','0','0'],
+      ['12/29/09','23:46:30','NA10','CICSVWRS','23:45:09.415186','23:45:09.417277','0.002',    '0','0','0'],
+      ['12/29/09','23:45:50','NA20','CICSVTIN','23:38:47.471498','23:38:47.476270','0.005','00:00:00.001843','00:00:00.001778','0.0029'],
+    ]
+  },
+
+  'smf110-keyval': {
+    title: 'CICS Socket Activity (KEY=VALUE)',
+    smf: 'SMF 110',
+    subtitle: 'Inbound socket metrics exported as flat key-value stream — 12/22/17',
+    insights: [
+      'SOG_CURR_INBOUND_SOCKETS=11 stable across all records — consistent active connection pool.',
+      'SOG_PEAK_INBOUND_SOCKETS=12 shows only 1 connection headroom above current — consider reviewing socket pool limits.',
+      'All records share identical timestamp — this is a point-in-time snapshot, not a time-series interval.'
+    ],
+    cols: ['Timestamp', 'CICS Region', 'Current Inbound Sockets', 'Peak Inbound Sockets'],
+    rows: [
+      ['2017/12/22-20:00:00.16','POLPRD','11','12'],
+      ['2017/12/22-20:00:00.16','POLPRD','11','12'],
+      ['2017/12/22-20:00:00.16','POLPRD','11','12'],
+    ]
+  },
+
+  'smf100-addrspace': {
+    title: 'DB2 Address Space Statistics',
+    smf: 'SMF 100 IFCID=1',
+    subtitle: 'QWSA segment preemptable and SRB timer values — 06/12/09',
+    insights: [
+      'SLLP shows the highest SRB timer at 06:03 in its second observation — significant SRB overhead, review workload classification.',
+      'TA21 has a large preemptable SRB timer (14.9s) with minimal TCB time — imbalance between TCB and SRB usage.',
+      'PROD DB2 address space has balanced TCB/SRB at ~26s/6.4s — operating normally.',
+      'DB29 appears twice with growing timer values — active DB2 member with increasing load between intervals.'
+    ],
+    cols: ['Date', 'Time', 'Proc Name', 'Preemptable Timer', 'Preemptable SRB', 'ASID', 'SRB Timer', 'ZIIP Timer'],
+    rows: [
+      ['06/12/09','12:03:46','PROD','00:00:26.353201','00:00:06.418556','268','',''],
+      ['06/12/09','12:03:46','DB29','00:00:00.984284','00:00:02.309871','289','',''],
+      ['06/12/09','12:03:46','SLLP','00:00:00.190581','00:00:00.388122','292','',''],
+      ['06/12/09','12:03:46','TA21','00:00:00.062769','00:00:14.998279','276','',''],
+      ['06/12/09','12:03:52','DB29','00:00:02.513809','00:00:56.396282','294','00:00:01.273490',''],
+      ['06/12/09','12:03:52','SLLP','00:00:01.288933','00:06:03.825810','298','00:05:58.706745','00:00:00.002479'],
+    ]
+  },
+
+  'smf100-ifc': {
+    title: 'DB2 IFC Destination Statistics',
+    smf: 'SMF 100 IFCID=1',
+    subtitle: 'Records written/not written per IFC destination',
+    insights: [
+      'SMF destination consistently writes 286–447 records per interval — steady throughput.',
+      'RES and GTF destinations show zero records — these trace facilities are inactive.',
+      'SR2 and LOG write exactly 1 record per interval — low-frequency control records.',
+      'No buffer errors or writer errors across any destination — IFC pipeline is healthy.'
+    ],
+    cols: ['Date', 'Time', 'Dest', 'Recs Written', 'Recs Not Written', 'Buffer Errors', 'Not Active', 'Not Accepted', 'Writer Errors'],
+    rows: [
+      ['06/12/09','12:03:46','SMF','286','0','0','0','0','0'],
+      ['06/12/09','12:03:46','RES','0',  '0','0','0','0','0'],
+      ['06/12/09','12:03:46','GTF','0',  '0','0','0','0','0'],
+      ['06/12/09','12:03:46','SR2','1',  '0','0','0','0','0'],
+      ['06/12/09','12:03:46','LOG','1',  '0','0','0','0','0'],
+      ['06/12/09','12:03:51','SMF','286','0','0','0','0','0'],
+      ['06/12/09','12:03:52','SMF','447','0','0','0','0','0'],
+    ]
+  },
+
+  'smf101-sql': {
+    title: 'DB2 SQL Statement Counts',
+    smf: 'SMF 101',
+    subtitle: 'SQL execution counts per job, plan, and correlation — 06/17/09',
+    insights: [
+      'All 5 transactions use SPECT300 plan — single plan serving multiple threads/users.',
+      'Zero SELECTs, UPDATEs, or DELETEs recorded — this workload is purely cursor-based (OPEN + FETCH).',
+      'Each transaction fetches exactly 19 rows — consistent, predictable read pattern.',
+      'Grand total: 5 opens, 95 fetches across all transactions.'
+    ],
+    cols: ['Date', 'Time', 'Correlation', 'Auth ID', 'DB2 Plan', 'SELECTs', 'UPDATEs', 'DELETEs', 'Opens', 'Fetches'],
+    rows: [
+      ['06/17/09','21:32:57','JDB2', 'TTAP01B','SPECT300','0','0','0','1','19'],
+      ['06/17/09','21:32:57','JDB2', 'TTAP01B','SPECT300','0','0','0','1','19'],
+      ['06/17/09','21:36:48','JDB2', 'TTAP01B','SPECT300','0','0','0','1','19'],
+      ['06/17/09','21:36:54','JDB2C','TJSK01A','SPECT300','0','0','0','1','19'],
+      ['06/17/09','21:37:07','JDB2A','TJSK01A','SPECT300','0','0','0','1','19'],
+    ]
+  },
+
+  'smf101-plan': {
+    title: 'DB2 Plan Statistics',
+    smf: 'SMF 101',
+    subtitle: 'MAJSERVR plan accounting — location and member details — 09/23/08',
+    insights: [
+      'All connections are from DBT4 member in DSN9KJT sharing group — single DB2 data sharing member serves all.',
+      'db2trbWebSph correlation indicates WebSphere-initiated requests — J2EE application traffic.',
+      'db2trbNon-de correlation at 10:40:14 suggests a non-default connection type — verify client application identity.',
+      'Multiple connections within 20 seconds from 192.168.24.30 — connection pooling is active.'
+    ],
+    cols: ['Date', 'Time', 'Correlation', 'Connection', 'Plan', 'Operator', 'Requestor Location', 'Sharing Group', 'Member'],
+    rows: [
+      ['09/23/08','10:40:03','db2trbWebSph','SERVER','MAJSERVR','SETUP','192.168.43.100','DSN9KJT','DBT4'],
+      ['09/23/08','10:40:05','db2trbWebSph','SERVER','MAJSERVR','SETUP','192.168.24.30', 'DSN9KJT','DBT4'],
+      ['09/23/08','10:40:13','db2trbWebSph','SERVER','MAJSERVR','SETUP','192.168.24.30', 'DSN9KJT','DBT4'],
+      ['09/23/08','10:40:14','db2trbNon-de','SERVER','MAJSERVR','SETUP','192.168.24.30', 'DSN9KJT','DBT4'],
+      ['09/23/08','10:40:20','db2trbWebSph','SERVER','MAJSERVR','SETUP','192.168.24.30', 'DSN9KJT','DBT4'],
+    ]
+  },
+
+  'smf101-response': {
+    title: 'DB2 Response Time Report',
+    smf: 'SMF 101',
+    subtitle: 'Main elapsed and CPU seconds per transaction — 10/13/09',
+    insights: [
+      'All rmsprod/perl transactions complete in under 10ms elapsed — DB2 is responding within SLA.',
+      'Final record shows 394ms elapsed — a batch-type operation mixing multiple SQL calls.',
+      'CPU times are consistently under 2ms — no CPU-bound transactions detected.',
+      'Empty user ID row (midnight timestamp) is a measurement artifact from the accounting interval boundary.'
+    ],
+    cols: ['Date', 'Time', 'User', 'Trans', 'Begin', 'End', 'Elapsed (s)', 'Main CPU (s)', 'Total CPU (s)'],
+    rows: [
+      ['10/13/09','20:46:33','rmsprod','perl','01:46:33.174587','01:46:33.180247','0.005660','0.001892','0.001892'],
+      ['10/13/09','20:46:33','rmsprod','perl','01:46:33.182359','01:46:33.184985','0.002626','0.000665','0.000665'],
+      ['10/13/09','20:46:33','rmsprod','perl','01:46:33.187028','01:46:33.191893','0.004865','0.000682','0.000682'],
+      ['10/13/09','20:46:33','rmsprod','perl','01:46:33.305910','01:46:33.315605','0.009695','0.000599','0.000599'],
+      ['10/13/09','20:46:33','',       '',    '00:00:00.000000','00:00:00.000000','0.000000','0.000000','0.000000'],
+      ['10/13/09','20:46:33','',       '',    '01:46:33.062795','01:46:33.457480','0.394685','0.030574','0.030574'],
+    ]
+  },
+
+  'smf102-dataset': {
+    title: 'DB2 Dataset IO Statistics',
+    smf: 'SMF 102 IFCID=199',
+    subtitle: 'Sync/async I/O delay and page counts per bufferpool — 18/12/13',
+    insights: [
+      'Avg sync IO delay trends from 1.1ms to 483ms by 04:11 — significant degradation; investigate DASD contention.',
+      'Async IO consistently outpaces sync — bufferpool is correctly deferring writes.',
+      'Getpage requests rising across intervals (36→49→78) — increasing DB2 working set activity.',
+      'Buffer pool -2 in first record suggests BP assignment tracking; verify bufferpool mapping.'
+    ],
+    cols: ['Date', 'Time', 'LPAR', 'Member', 'DB ID', 'Page Set', 'Partition', 'Bufferpool', 'Avg Sync IO (ms)', 'Max Sync IO', 'Total Sync Pages', 'Avg Async IO (ms)', 'Getpage Req'],
+    rows: [
+      ['18/12/13','04:01:00','TN01','ND01','311','5','1','2', '1.170','0','9', '23.881','36.422'],
+      ['18/12/13','04:02:00','TN01','ND01','311','5','1','1', '1.328','0','3', '31.896','46.072'],
+      ['18/12/13','04:03:00','TN01','ND01','311','5','1','0', '1.121','0','4', '33.998','49.737'],
+      ['18/12/13','04:04:01','TN01','ND01','311','5','1','0', '2.535','0','3', '56.021','78.372'],
+      ['18/12/13','04:11:00','TN01','ND01','311','5','1','1', '483',  '0','4', '12.521','15.532'],
+    ]
+  },
+
+  'smf102-storedproc': {
+    title: 'DB2 Stored Procedure Activity',
+    smf: 'SMF 102 IFCID=380',
+    subtitle: 'Entry/exit events with CPU and elapsed times — 08/11/17',
+    insights: [
+      'AFVCUSSP takes 11.4ms elapsed on its single invocation — relatively heavy for a customer lookup procedure.',
+      'SQLPROCEDURECOLS called multiple times with near-zero CPU — a catalog query utility, not user procedure.',
+      'AFSTRNSP accumulated 39.2ms elapsed — verify if this is expected for a string/namespace operation.',
+      'CLS2 CPU consistently lower than CLS1 — work is appropriately spread across classes.'
+    ],
+    cols: ['Date', 'Time', 'Event', 'Routine', 'Schema', 'CLS1 CPU', 'CLS2 CPU', 'CLS2 Elapsed', 'Routine ID'],
+    rows: [
+      ['08/11/17','14:11:05','ENTRY','SQLPROCEDURECOLS','SYSIBM', '0.000000','0.000000','0.000000','293C'],
+      ['08/11/17','14:11:05','EXIT', 'SQLPROCEDURECOLS','SYSIBM', '0.004721','0.004604','0.037211','293C'],
+      ['08/11/17','14:11:05','ENTRY','AFVCUSSP',         'AAFCOD1','0.004721','0.004604','0.037211','19B0'],
+      ['08/11/17','14:11:05','EXIT', 'AFVCUSSP',         'AAFCOD1','0.006151','0.005320','0.048462','19B0'],
+      ['08/11/17','14:11:05','ENTRY','SQLPROCEDURECOLS','SYSIBM', '0.000000','0.000000','0.000000','293C'],
+      ['08/11/17','14:11:05','EXIT', 'SQLPROCEDURECOLS','SYSIBM', '0.001275','0.001195','0.001942','293C'],
+      ['08/11/17','14:11:05','ENTRY','AFSTRNSP',         'AAFCOD1','0.001275','0.001195','0.001942','19B2'],
+      ['08/11/17','14:11:06','EXIT', 'AFSTRNSP',         'AAFCOD1','0.005356','0.004777','0.041130','19B2'],
+    ],
+    badges: { 'ENTRY': 'cyan', 'EXIT': 'green' },
+    badgeCol: 2
+  },
+
+  'smf102-v10compat': {
+    title: 'DB2 V10 Incompatibility Report',
+    smf: 'SMF 102 IFCID=366',
+    subtitle: 'Programs using features incompatible with DB2 V10',
+    insights: [
+      'SYSIBM.CHAR(decimal-expr) called 3 times by DSNETS98 — this function behavior changed in V10.',
+      'All occurrences are at statement 245 in DSNETPCS collection — single code path, easy to remediate.',
+      'TSO connection mode suggests interactive tool usage (DSNESPCS) — not a batch job; developer action needed.',
+      'Remediation: replace CHAR(decimal-expr) with CHAR(CAST(col AS CHAR(n))) before V10 migration.'
+    ],
+    cols: ['IFCID', 'Date', 'Time', 'Connect', 'Plan', 'Operator', 'LD', 'Incompatible Feature', 'Stmt#', 'Collection', 'Program'],
+    rows: [
+      ['366','09/21/13','09:35:23','TSO','DSNESPCS','P017202','1','V9 SYSIBM.CHAR(decimal-expr)','245','DSNETPCS','DSNETS98'],
+      ['366','09/21/13','09:35:43','TSO','DSNESPCS','P017202','1','V9 SYSIBM.CHAR(decimal-expr)','245','DSNETPCS','DSNETS98'],
+      ['366','09/21/13','09:35:51','TSO','DSNESPCS','P017202','1','V9 SYSIBM.CHAR(decimal-expr)','245','DSNETPCS','DSNETS98'],
+    ]
+  },
+
+  'smf102-v11compat': {
+    title: 'DB2 V11 Incompatibility Report',
+    smf: 'SMF 102 IFCID=376',
+    subtitle: 'Programs using deprecated features ahead of V11 migration',
+    insights: [
+      'CLIENT_USERID, CLIENT WKSTNAME, CLIENT_APPLNAME, CLIENT_ACCTNG — all 4 deprecated special registers accessed.',
+      'All from GAWASDB via DRDA connection from 192.168.62.37 — a remote Java client (db2jcc).',
+      'These are dynamic SQL statements (SYSLH200, stmt 0) — runtime incompatibilities, not compile-time.',
+      'Action: Update db2jcc application to use V11-compatible connection attribute APIs before migration.'
+    ],
+    cols: ['Date', 'System', 'DB2 Member', 'Plan', 'Collection', 'Program', 'Stmt', 'Type', 'Function', 'Description', 'Auth ID', 'Remote IP'],
+    rows: [
+      ['01/15/19','SYA0','DB1Y','DISTSERV','NULLID','SYSLH200','0','DYNAMIC','1,104','CLIENT_USERID',   'GAWASDB','192.168.62.37'],
+      ['01/15/19','SYA0','DB1Y','DISTSERV','NULLID','SYSLH200','0','DYNAMIC','1,105','CLIENT WKSTNAME', 'GAWASDB','192.168.62.37'],
+      ['01/15/19','SYA0','DB1Y','DISTSERV','NULLID','SYSLH200','0','DYNAMIC','1,106','CLIENT_APPLNAME', 'GAWASDB','192.168.62.37'],
+      ['01/15/19','SYA0','DB1Y','DISTSERV','NULLID','SYSLH200','0','DYNAMIC','1,107','CLIENT_ACCTNG',   'GAWASDB','192.168.62.37'],
+    ]
+  },
+
+  'smf102-tableaudit': {
+    title: 'DB2 Table Access Audit',
+    smf: 'SMF 102 IFCID=144',
+    subtitle: 'Who accessed FLOAT* tables and when — 04/11/10',
+    insights: [
+      'TTP011A is the sole operator accessing both FLOATACC1 and FLOATTEMP — no unexpected access patterns.',
+      'Access via both TSO/ADB (interactive) and DB2CALL/SPECT303 (stored procedure) — same user from two connection modes.',
+      'FLOATACC1 accessed 5 times vs FLOATTEMP 4 times — primary table receives more attention.',
+      'No update/delete events recorded — audit shows read-only access pattern to these float tables.'
+    ],
+    cols: ['Type', 'IFCID', 'Date', 'Time', 'Connect', 'Plan', 'Operator', 'DB ID', 'DB Name', 'PSID', 'OBID', 'Table Name'],
+    rows: [
+      ['102','144','04/11/10','18:37:40','TSO',    'ADB',     'TTP011A','291','FLOATACC1','2','3','FLOATAAC1'],
+      ['102','144','04/11/10','18:37:54','TSO',    'ADB',     'TTP011A','291','FLOATACC1','2','3','FLOATAAC1'],
+      ['102','144','04/11/10','18:38:09','TSO',    'ADB',     'TTP011A','291','FLOATACC1','2','3','FLOATAAC1'],
+      ['102','144','04/11/10','18:38:19','TSO',    'ADB',     'TTP011A','292','FLOATTEMP','2','3','FLOATTEMP'],
+      ['102','144','04/11/10','18:38:31','TSO',    'ADB',     'TTP011A','292','FLOATTEMP','2','3','FLOATTEMP'],
+      ['102','144','04/11/10','18:48:35','DB2CALL','SPECT303','TTP011A','292','FLOATTEMP','2','3','FLOATTEMP'],
+      ['102','144','04/11/10','18:49:29','DB2CALL','SPECT303','TTP011A','291','FLOATACC1','2','3','FLOATAAC1'],
+    ]
+  },
+
+  'smf14-dsusage': {
+    title: 'Dataset Usage by Job',
+    smf: 'SMF 14',
+    subtitle: 'EXCP counts, record formats, and volumes per dataset — 08/08/07',
+    insights: [
+      'IMS OLP dataset processed by BT910152 with 9,001 EXCPs — highest I/O in this report; confirm batch window alignment.',
+      'SYS1.TSO.CLIST.N shows 0 EXCPs — opened but no data transferred; possible catalogue-only reference.',
+      'D10.SMF.GDG.LIST (DUMPSMF) — a GDG dataset for SMF archival with only 59 EXCPs; small periodic dump.',
+      'Variable-length dataset (BT910152, LRECL 24,572) near maximum blocksize — good space utilisation.'
+    ],
+    cols: ['Job Name', 'Timestamp', 'Step', 'Program', 'DD Name', 'Dataset Name', 'EXCPs', 'Created', 'LRECL', 'Blksize', 'Volume', 'SMS Mgmt', 'SMS Stor'],
+    rows: [
+      ['BALCOMB', '08/02/07 07:41','BTPRMF52','IKJEFT01','SYSPROC','SYS1.TSO.CLIST.N',      '0',    '04/08/03','80',    '27,920','KRJSTC','',''],
+      ['BT910152','08/02/07 12:01','AT1',     'DFSULLS1','DFUTLP02','IMSSYST.IMS1.OLP',     '9,001','02/14/07','24,572','24,576','V91024','TESTBASE','TESTBASE'],
+      ['DUMPSMF', '08/02/07 12:00','DUMPSMF', 'SMFGDG',  'LOG',    'D10.SMF.GDG.LIST',      '59',   '02/09/95','80',    '27,920','C23AQ2','',''],
+    ]
+  },
+
+  'smf42-dsperf': {
+    title: 'DFSMS Dataset Closing Statistics',
+    smf: 'SMF 42 Sub6',
+    subtitle: 'IO rates and volumes at dataset close — datasets beginning TTAP01B',
+    insights: [
+      'TTAP01B.SMF19 has IO rate 166 with only 1 IO — a large sequential write, likely SMF data dump.',
+      'TTAP01B.SPFTEMP0.CNT accessed 176–177 times at low IO rate — a frequently rewritten temporary control dataset.',
+      'TTAP01B.SW.COPYLIB: 7 IOs at rate 39 — a partitioned dataset with multiple member reads.',
+      'AP400.LOADLIB accessed 28 times from VPWRKB — a heavily used load library; consider LLA caching.'
+    ],
+    cols: ['Job', 'Date', 'Time', 'Job Type', 'Category', 'Dataset Name', 'IO Rate', 'IO Count', 'Volume', 'Block Size'],
+    rows: [
+      ['TTAP01B','06/17/09','12:45:56','TSO01','TSOOTHER','TTAP01B.ISPF.ISPPROF',    '40', '4',  'SYST1B','6,160'],
+      ['TTAP01B','06/17/09','12:45:56','TSO01','TSOOTHER','TTAP01B.ISPF.ISPPROF',    '8',  '4',  'SYST1B','6,160'],
+      ['TTAP01B','06/17/09','12:45:56','TSO01','TSOOTHER','TTAP01B.AP400.ASM',       '122','1',  'VPWRKC','256'],
+      ['TTAP01B','06/17/09','12:45:56','TSO01','TSOOTHER','TTAP01B.AP400.ASM',       '13', '1',  'VPWRKC','256'],
+      ['TTAP01B','06/17/09','12:45:56','TSO01','TSOOTHER','TTAP01B.SPFTEMP0.CNT',    '5',  '176','SYST1C','320'],
+      ['TTAP01B','06/17/09','12:45:56','TSO01','TSOOTHER','TTAP01B.SPFTEMP0.CNT',    '4',  '177','SYST1C','800'],
+      ['SMF101', '06/17/09','12:48:31','BATMDM','BATCH',  'TTAP01B.SMF19',           '166','1',  'SYST1E','27,998'],
+      ['SMF101', '06/17/09','12:48:31','BATMDM','BATCH',  'TTAP01B.SW.COPYLIB',      '39', '7',  'SYST1E','23,440'],
+      ['SMF101', '06/17/09','12:48:31','BATMDM','BATCH',  'TTAP01B.AP400.LOADLI',    '20', '28', 'VPWRKB','23,440'],
+    ]
+  },
+
+  'smf64-vsam': {
+    title: 'VSAM File Statistics',
+    smf: 'SMF 64',
+    subtitle: 'CI/CA splits, EXCP counts, and record totals per VSAM component',
+    insights: [
+      'DLISET82 has 1,273 CI splits and 303,715 EXCPs — reorganisation is strongly recommended.',
+      'CICSDNMS across 8 components shows zero splits with 24 total EXCPs — well-tuned VSAM dataset.',
+      'DLISET82 second component (DB4DSP) shows 17 CA splits — free space exhaustion in at least one control area.',
+      'ERPTRKIL on same volume SQK102 as CICSDNMS — verify no I/O contention between these workloads.'
+    ],
+    cols: ['Job', 'Reader Time', 'Volume', 'Device', 'BEG CCCHH', 'END CCCHH', 'Extents', 'Records', 'Deletes', 'CI Splits', 'CA Splits', 'EXCPs'],
+    rows: [
+      ['CICSDNMS','05/23/08 19:59','SQK102','7308','04EF0000','0520000E','1',     '2',        '0',    '0',    '0','3'],
+      ['CICSDNMS','05/23/08 19:59','SQK102','7308','0009000C','0009000E','1',     '1',        '0',    '0',    '0','3'],
+      ['CICSDNMS','05/23/08 19:59','SQK102','7308','04BD0000','04EE000E','1',     '2',        '0',    '0',    '0','3'],
+      ['DLISET82','05/23/08 22:13','DB4D03','5D03','26C50000','26CE000E','15',    '1,115,761','25,946','1,273','0','303,715'],
+      ['DLISET82','05/23/08 22:13','DB4DSP','5F06','00920002','00920004','12',    '296,178',  '1',    '162',  '17','64,141'],
+      ['ERPTRKIL','07/24/06 11:49','SQK102','7308','04EF0000','0520000E','4',     '142,235',  '0',    '0',    '0','4'],
+    ]
+  },
+
+  'smf94-tape': {
+    title: 'Tape Library Statistics',
+    smf: 'SMF 94',
+    subtitle: 'Hourly tape mount activity and volume utilisation — 11AM window',
+    insights: [
+      '275 scratch volumes available vs 4,099 reclaim threshold percentage — healthy scratch pool.',
+      '252 volumes in 50–100% utilisation range — majority of mounted tapes are well-used.',
+      'Avg mount time 73s, dismount 66s — within expected range for robot-handled tape libraries.',
+      'Max drive utilisation was 15 drives simultaneously — check library capacity versus peak demand.'
+    ],
+    cols: ['Date', 'Time', 'Hour', 'Max Drives', 'Total Mounts', 'Total Dismounts', 'Avg Mount (s)', 'Avg Dismount (s)', 'Vols 10-20%', 'Vols 50-100%', 'Scratch Vols', 'Private Vols'],
+    rows: [
+      ['11/02/07','12:18:29','11','15','37','32','73','66','1','275','329','4,099'],
+    ]
+  },
+
+  'smf15-17-ds': {
+    title: 'Dataset Updates and Deletes',
+    smf: 'SMF 15/17',
+    subtitle: 'Datasets opened for update or deleted — containing "SPFTEMP"',
+    insights: [
+      'W0TTRP1 updates and deletes its own SPFTEMP datasets — normal TSO ISPF session cleanup.',
+      'SPFTEMP1.CNTL deleted and rewritten in the same timestamp — consistent with ISPF edit save.',
+      'SPFTEMP2 opened with DISP=OLD — exclusive access; no shared update concern.',
+      'All 3 events within the same reader window — a single ISPF session batch of operations.'
+    ],
+    cols: ['Job Name', 'Reader Time', 'Log Time', 'SMF Type', 'Dataset Name', 'SMS Class', 'Disposition'],
+    rows: [
+      ['W0TTRP1','08/02/07 10:55','12:23:48','15','W0TTRP1.SPFTEMP2.CNTL','TSO','OLD'],
+      ['W0TTRP1','08/02/07 10:55','12:23:57','15','W0TTRP1.SPFTEMP1.CNTL','TSO','OLD'],
+      ['W0TTRP1','08/02/07 10:55','12:23:57','17','W0TTRP1.SPFTEMP1.CNTL','',   'DELETE'],
+    ],
+    badges: { '15': 'amber', '17': 'red' },
+    badgeCol: 3
+  },
+
+  'smf70-cpu': {
+    title: 'CPU Processor Activity',
+    smf: 'SMF 70',
+    subtitle: 'LPAR processor percent time online — 10/25/12 · 14:59 interval',
+    insights: [
+      'Processor 0003 at 94.7% online time is the most heavily utilised — confirm workload is not CPU-constrained.',
+      'Processor 0002 shows 89.6% online but only 9.8% dispatch — high online but low actual work; weighted fairly.',
+      'Average dispatch across all processors is 13.4% — LPAR is I/O-bound as expected.',
+      '12 partitions in the DPLEX1 sysplex have no CPUs assigned — these are defined but inactive LPARs.'
+    ],
+    cols: ['Proc Addr', 'Weight', 'Online Time', '% Online', 'Wait Time', '% Wait', 'Dispatch Time', '% Dispatch', 'Eff Dispatch'],
+    rows: [
+      ['0000','187','14:59.958','100.0%','8:08.826','54.3%','6:46.144','45.1%','45.5%'],
+      ['0001','187','14:59.958','100.0%','8:29.915','56.7%','6:18.582','42.1%','42.3%'],
+      ['0002','187','14:59.958','100.0%','13:26.689','89.6%','1:28.331','9.8%','9.8%'],
+      ['0003','187','14:59.958','100.0%','14:11.978','94.7%','0:43.805','4.9%','4.9%'],
+    ]
+  },
+
+  'smf73-channel': {
+    title: 'RMF Channel Profile',
+    smf: 'SMF 73',
+    subtitle: 'Channel utilisation and throughput by channel type',
+    insights: [
+      'CLX channels (0001, 0002) show zero utilisation — coupling channels are inactive in this interval.',
+      'FW_S channel 0071 leads write throughput at 16.95 MB/s bus, 3.60 MB/s partition — high I/O workload.',
+      'OMH channel 00A2 shows 16.42 MB/s partition write — optical multi-hop channel serving high write workload.',
+      'Channel 0041 and 0042 show near-identical metrics — likely a redundant pair operating in parallel.'
+    ],
+    cols: ['Channel ID', 'Type', 'Util% Gen', 'Util% Partition', 'Util% Total', 'Read Bus (MB/s)', 'Read Part (MB/s)', 'Write Part (MB/s)', 'Write Total (MB/s)'],
+    rows: [
+      ['0001','CLX',  '0','***Z**','***Z**','0.00','0.00','0.00','0.00'],
+      ['0002','CLX',  '0','***Z**','***Z**','0.00','0.00','0.00','0.00'],
+      ['0031','FW_S', '9','0.00',  '0.00',  '0.00','0.00','0.00','0.00'],
+      ['0041','FW_S', '8','9.90',  '9.94',  '1.95','9.89','5.64','5.64'],
+      ['0042','FW_S', '8','9.89',  '9.94',  '1.95','9.88','5.67','5.67'],
+      ['0071','FW_S', '8','10.90', '10.97', '2.57','16.95','3.60','3.61'],
+      ['00A2','OMH',  '0','1.10',  '1.12',  '0.00','0.59','16.42','16.42'],
+      ['00A4','OMH',  '0','4.76',  '4.83',  '0.00','2.39','11.04','11.04'],
+    ]
+  },
+
+  'smf74-coupling': {
+    title: 'RMF Coupling Activity',
+    smf: 'SMF 74',
+    subtitle: 'Coupling facility structure sync/async operations — SYSPL9 · 08/14/07',
+    insights: [
+      'ACF2_LIDS has 184,508 sync requests vs only 68 async — a heavily synchronous access pattern; latency-sensitive.',
+      'CSAF_LOCK1 shows ***S*** for sync service time — overflow or unmeasurable value; investigate CF lock contention.',
+      'CTBA_LOCK1: 22M+ sync service time units — extremely high, indicative of lock contention or slow CF response.',
+      'BERVM_SMS structures show low request counts relative to ACF2 — SMS cache is well-managed.'
+    ],
+    cols: ['Structure', 'Interval Start', 'Interval Length', 'Struct Size', 'Async Opers', 'Sum Async Time', 'Async Reqs (No Res)', 'Sync Reqs', 'Sum Sync Time'],
+    rows: [
+      ['ACF2_LIDS', '09:30:00','10:00.000','50,048','16,034','1,004M','68',    '184,508','3,490'],
+      ['BERVM_SMS2','09:30:00','10:00.000','2,304', '3,459', '200M',  '13',    '261,598','1,150'],
+      ['BERVM_SMS3','09:30:00','10:00.000','2,304', '1,025', '28M',   '5',     '9,526',  '208'],
+      ['CSAF_LOCK1','09:30:00','10:00.000','8,064', '2,658', '53M',   '10,652','*****S****','264,935'],
+      ['CSAF_SCA',  '09:30:00','10:00.000','8,192', '1,588', '167M',  '8',     '52,673', '649'],
+      ['CTBA_LOCK1','09:30:00','10:00.000','3,072', '1,046', '8,942K','3,400', '22,415,563','81,367'],
+    ]
+  },
+
+  'smf113-hw': {
+    title: 'Hardware Counter Report',
+    smf: 'SMF 113',
+    subtitle: 'Processor counter set values from hardware performance monitoring',
+    insights: [
+      'Counter set type 4 holds 29 counters per processor — richest data source for microarchitectural analysis.',
+      'First collection interval shows baseline counts at 4.9M for processor 0 — a warm system snapshot.',
+      'Second interval for set type 1 at 10:01 shows 1.337 trillion counts — exponential growth confirms active workload.',
+      'Processor 1 set 1 at 46,196 counts vs processor 0 at 4.9M — significant load imbalance; review WLM weights.'
+    ],
+    cols: ['Start', 'End', 'Date', 'Proc', 'Set Type', 'Num Counters', 'Counter Map', 'First Counter Value'],
+    rows: [
+      ['9:51:56','9:51:56', '02/16/11','0','1', '6', 'FC00000000000000','4,902,361'],
+      ['9:51:56','9:51:56', '02/16/11','0','2', '6', 'FC00000000000000','4,902,361'],
+      ['9:51:56','9:51:56', '02/16/11','0','3', '16','FFFF000000000000','4,902,361'],
+      ['9:51:56','9:51:56', '02/16/11','0','4', '29','FFFFFFF800000000','4,902,361'],
+      ['9:51:56','9:51:56', '02/16/11','1','1', '6', 'FC00000000000000','46,196'],
+      ['9:51:56','10:01:56','02/16/11','0','1', '6', 'FC00000000000000','1,337,526,720,861'],
+    ]
+  },
+
+  'smf80-racf': {
+    title: 'RACF Events Log',
+    smf: 'SMF 80',
+    subtitle: 'Security events — access, initiations, and denials — 07/24/06',
+    insights: [
+      'XH4AMGS/WITADM4 — password not valid at 11:47. Confirm account lock policy applied; review for brute-force pattern.',
+      'USER031 denied access to DIRACC class at 11:30 — verify if this is expected or a misconfigured profile.',
+      'JES2 SETUP operator modified STC resource with ALTER authority — privileged update; confirm change management approval.',
+      'XH7ADM denied DIRSRC at 11:35 — two directory search failures close in time; worth correlating with XH4AMGS activity.'
+    ],
+    cols: ['Job Name', 'Time', 'Event', 'Qualifier', 'User', 'Group', 'Resource', 'Request', 'Allowed', 'Class'],
+    rows: [
+      ['CICS3A8A','12:00:03','JOB INITIATION / TSO',  'Successful RACINIT',  'CICSUSER','SYS1',    'CONTROL',          'CONTROL','CONTROL',''],
+      ['GARRETY', '11:52:12','RESOURCE ACCESS',        'Successful access',   'GARRETY', 'GEOTEAM', 'MVS.STOP.STC.WT4', 'UPDATE', 'CONTROL','OPERCM'],
+      ['JES2',    '11:46:09','RESOURCE ACCESS',        'Successful access',   'SETUP',   'SYS1',    'MVS.MODIFY.STC.F', 'UPDATE', 'ALTER',  'OPERCM'],
+      ['USER031', '11:30:10','CHECK ACCESS TO DIRE',   'Not authorized',      'USER031', 'OEDFLTG', 'CONTROL',          'CONTROL','CONTROL','DIRACC'],
+      ['XH4AMGS', '11:47:18','JOB INITIATION / TSO',  'Password not valid',  'WITADM4', 'WITADMGP','CONTROL',          'CONTROL','',       ''],
+      ['XH7ADM',  '11:35:45','DIRECTORY SEARCH',       'Not authorized',      'XH7ADM',  'WT6CFG',  'CONTROL',          'CONTROL','',       'DIRSRC'],
+    ],
+    badges: { 'Not authorized': 'red', 'Password not valid': 'red', 'Successful RACINIT': 'green', 'Successful access': 'green' },
+    badgeCol: 3
+  },
+
+  'smf89-racfstats': {
+    title: 'RACF Initialization Statistics',
+    smf: 'SMF 89 Sub1',
+    subtitle: 'Interval CPU times by product and system — ZPACPLX2 · 10/02/09',
+    insights: [
+      'SYSZ9 z/OS consumed 58,800 TCB seconds (over 16 hours) — more than 6× SYSZ1. This system carries a much heavier workload.',
+      'IMS/ESA on SYSZ9 at 13,565 seconds SRB — a significant IMS workload; confirm this is expected.',
+      'MQM on SYSZ1 shows zero SRB time — MQ using only TCB path; no async work active.',
+      'Grand total 81,731 CPU seconds across 6 items in a 2-hour measurement window — production-level system activity.'
+    ],
+    cols: ['System', 'Interval Start', 'Interval End', 'Product', 'TCB (secs)', 'TCB Time', 'SRB (secs)', 'SRB Time'],
+    rows: [
+      ['SYSZ1','11:00:00','12:00:00','z/OS',      '5,342','01:29:02','305','00:05:05'],
+      ['SYSZ1','12:00:00','13:00:00','z/OS',      '3,955','01:05:55','343','00:05:43'],
+      ['SYSZ1','11:00:00','12:00:00','MQM MVS/ESA','69', '00:01:09','0',  '00:00:00'],
+      ['SYSZ9','11:00:00','12:00:00','z/OS',      '31,090','08:38:10','318','00:05:18'],
+      ['SYSZ9','12:00:00','13:00:00','z/OS',      '27,710','07:41:50','290','00:04:50'],
+      ['SYSZ9','11:00:00','12:00:00','IMS/ESA',   '13,565','03:46:05','0',  '00:00:00'],
+    ]
+  },
+
+  'smf14-racf-ds': {
+    title: 'Dataset Access with RACF User Info',
+    smf: 'SMF 14/15/17/30',
+    subtitle: 'Correlated dataset access log with RACF context — 02/18/13',
+    insights: [
+      'CEE.SCEERUN read twice by LLA with no RACF userid — system LLA access; expected and safe.',
+      'DB2LOG write by DBX1MSTR — DB2 archive log writing active; normal DB2 log archival operation.',
+      'WITADM1 self-deletes and rewrites SPFTEMP — normal ISPF session; corroborates SMF 15/17 findings.',
+      'LORAIN0/TNJ80005 (terminal session) reading CICSVR load library — verify this interactive access is authorised.'
+    ],
+    cols: ['Dataset Name', 'Action', 'RACF Group', 'User ID', 'Terminal', 'Job Name', 'Timestamp', 'Step', 'Program'],
+    rows: [
+      ['BLD.CICSVR.SDWWLOAD',        'READ',  'SYS1',   'LORAIN0','TNJ80005','LORAIN0', '2007/11/02 10:16','DB2PLEX2','IKJEFT01'],
+      ['CEE.SCEERUN',                 'READ',  'LLA',    '',       '',        'LLA',     '2007/11/01 19:03','LLA',     'CSVLLCRE'],
+      ['DB2LOG.DBX1.ARCLG1.D07306',  'WRITE', 'DBX1MSTR','',     '',        '',        '2007/11/01 19:03','DBX1MSTR','DSNYASCP'],
+      ['IMSSYST.IMS1.OLP0',           'WRITE', 'IMS1',   '',       '',        '',        '2007/11/01 19:09','IMS1',    'DFSMVRC0'],
+      ['WITADM1.SPFTEMP1.CNTL',      'DELETE','WITADM1', '',      '',        '',        '2007/11/02 10:55','',''],
+      ['WITADM1.SPFTEMP1.CNTL',      'WRITE', 'WITADM1', '',      '',        '',        '2007/11/02 10:55','DB2PLEX2','IKJEFT01'],
+    ],
+    badges: { 'READ': 'cyan', 'WRITE': 'amber', 'DELETE': 'red' },
+    badgeCol: 1
+  },
+
+  'smf6-printway': {
+    title: 'PrintWay Event Log',
+    smf: 'SMF 6',
+    subtitle: 'IP PrintWay SMF6 records listed by host — SYSK',
+    insights: [
+      'ABC05 uses the same task and user ID — operator-submitted print job direct to spool.',
+      'TMLS@240 jobs submitted by ZBZ00 targeting nb1syg — a different print server; separate print class routing.',
+      'JOB prefix vs TSU prefix: TMLS@240 runs as a batch job; ABC05 as a TSO session.',
+      'All output directed to DD name OUTPUT or SASLIST — standard output routing patterns.'
+    ],
+    cols: ['SYS ID', 'Print Date', 'Print Time', 'Host Name', 'Task Name', 'User ID', 'Task #', 'DD Name'],
+    rows: [
+      ['SYSK','07/02/13','09:30:51','nb1sye','ABC05',   'ABC05','TSU05817','OUTPUT'],
+      ['SYSK','07/12/13','12:46:31','nb1sye','ABC05',   'ABC05','TSU01566','OUTPUT'],
+      ['SYSK','07/31/13','05:01:55','nb1syg','TMLS@240','ZBZ00','JOB02881','SASLIST'],
+      ['SYSK','08/31/13','05:01:59','nb1syg','TMLS@240','ZBZ00','JOB01237','SASLIST'],
+    ]
+  },
+
+  'smf119-ftp-host': {
+    title: 'FTP Transfers by Host',
+    smf: 'SMF 119 Sub70',
+    subtitle: 'FTP server transfer completions with IP and hostname details',
+    insights: [
+      'Two STOR commands from 181.59.217.216 — same remote sending two sequential datasets to SYS1 (FTPJOB01).',
+      'RETR from 131.156.225.182 and 120.1.100.93 — two different remotes pulling data from different stacks.',
+      'USERFTP on PLEX01 retrieving common and DCOLLECT files from 120.1.100.93 — likely a monitoring/reporting system.',
+      'No hostnames resolved for remote IPs in this report — consider enabling reverse DNS for audit clarity.'
+    ],
+    cols: ['Date', 'Time', 'Command', 'Type', 'Remote IP', 'Remote Host', 'Local IP', 'Local Host', 'User', 'Filename'],
+    rows: [
+      ['11/11/13','23:05:19','STOR','SEQ','181.59.217.216','','99.01.4.102', 'SYS1',  'FTPJOB01','DATASET.GOING.OUT.D131102.#01'],
+      ['11/11/13','23:05:19','STOR','SEQ','181.59.217.216','','99.01.4.102', 'SYS1',  'FTPJOB01','DATASET.GOING.OUT.D131102.#02'],
+      ['11/11/13','23:25:45','RETR','SEQ','131.156.225.182','','99.01.4.98',  'SYS2',  'FTPJOB01','DATASET.GOING.OUT.D131102.#03'],
+      ['11/11/13','23:30:18','RETR','SEQ','120.1.100.93',  '','99.01.3.65',  'PLEX01','USERFTP', 'SMF.FILE.TO.COMMON'],
+      ['12/11/13','00:02:30','RETR','SEQ','120.1.100.93',  '','99.01.3.65',  'PLEX01','USERFTP', 'DCOLLECT.FILE.#01'],
+    ]
+  },
+
+  'smf119-ftp-detail': {
+    title: 'FTP Transfer Detail',
+    smf: 'SMF 119 Sub70',
+    subtitle: 'Full FTP transfer log sorted by start time — PD1/PLX11',
+    insights: [
+      '1.5 GB RETR by MCM1A2B took 84.96 seconds — review bandwidth throttling policy for large image transfers.',
+      '14.9 MB RETR completed in 0.69s — very fast; likely same-datacenter or high-speed link.',
+      'DELE command by MCM1A2B on TTSP011 — confirm deletion was authorised and not an accidental dataset loss.',
+      'MCMX981 STOR of 30KB completed in 0.00s — sub-second; size below timing resolution threshold.'
+    ],
+    cols: ['Stack', 'Command', 'Remote IP', 'Local IP', 'User', 'Data Type', 'Start Time', 'Duration (s)', 'Bytes', 'Dataset Name'],
+    rows: [
+      ['STXA81A','STOR','100.59.162.15', '100.62.110.26','C931169','ASCII','13:04:07.40','0.06', '0.3 MB', '@TO.WH.P0.BATCHABS.NONE.D09082'],
+      ['STXA81A','STOR','100.59.162.15', '100.62.110.26','C931169','ASCII','13:05:38.64','0.06', '0.3 MB', '@TO.WH.P0.BATCHABS.NONE.D09082'],
+      ['STXA81A','STOR','199.8.12.25',   '100.62.110.26','MCMX981','ASCII','13:08:24.81','0.00', '30.0 KB','PRD1.PO.M0143181.JAIS.#000002'],
+      ['STXA81A','RETR','100.62.212.114','100.62.110.26','MCM1A2B','IMAGE','13:11:51.66','0.69', '14.9 MB','TTSP011.LKA.J1.SMF.GA1.OTH.D092'],
+      ['STXA81A','RETR','100.62.212.114','100.62.110.26','MCM1A2B','IMAGE','13:12:00.36','84.96','1.5 GB', 'TTSP011.LKA.J1.SMF.RZ1.OTH.D092'],
+      ['STXA81A','DELE','100.62.212.114','100.62.110.26','MCM1A2B','IMAGE','13:13:41.20','0.00', '0.0 B',  'TTSP011.LKA.J1.SMF.HA1.OTH.D092'],
+    ],
+    badges: { 'STOR': 'amber', 'RETR': 'cyan', 'DELE': 'red' },
+    badgeCol: 1
+  },
+
+  'smf119-sftp': {
+    title: 'OpenSSH SFTP Transfers',
+    smf: 'SMF 119 Sub96/97',
+    subtitle: 'SFTP server and client transfer completions — Jan/Feb 2011',
+    insights: [
+      'Server records (96) show GET operations from 55.66.77.88 — same remote IP pulling two files within 40 seconds.',
+      'Client records (97) all PUT 144-byte log files to zutil2@123.234.567.999 — consistent log-shipping pattern.',
+      'All transfers completed in under 1 second — small log files, high-frequency pattern.',
+      'PGASHC and PGAI4A userIDs from two different ASNAMEs — separate processes, same destination; likely a log aggregator feed.'
+    ],
+    cols: ['Type', 'System', 'AS Name', 'User ID', 'Command', 'Mode', 'Date', 'Time', 'Duration', 'Bytes', 'Status', 'Remote IP', 'Path'],
+    rows: [
+      ['Server','SYS2','TPADMIN6','TPADMIN','GET','','01/03/11','07:00:19','','','OK','11.22.33.44','/SYS2/tmp/payment_detail.SYS2'],
+      ['Server','SYS2','TPADMIN7','TPADMIN','GET','','01/03/11','07:00:19','','','OK','11.22.33.44','/SYS2/var/hkeeping/payment_history.SYS2'],
+      ['Client','SYS1','VXATP70I','PGASHC', 'PUT','A', '28/02/11','03:00:44','00:00:00.00','144','OK','123.234.567.999','/data/browse/tmp/LogFile-20110228-030042'],
+      ['Client','SYS1','I4ATP70I','PGAI4A',  'PUT','A', '28/02/11','03:14:30','00:00:00.01','144','OK','123.234.567.999','/data/browse/tmp/LogFile-20110228-031429'],
+      ['Client','SYS2','VXATP70I','PGASHC', 'PUT','A', '01/03/11','03:04:34','00:00:00.00','144','OK','123.234.567.999','/data/browse/tmp/LogFile-20110301-030432'],
+    ],
+    badges: { 'OK': 'green', 'FAIL': 'red' },
+    badgeCol: 10
+  },
+
+  'smf119-tcp': {
+    title: 'TCP Daily Connections',
+    smf: 'SMF 119',
+    subtitle: 'TCP connection log sorted by resource — ST1/SYPROD/S01QDAS',
+    insights: [
+      'FTPTA8 had a 7h19m connection — an open persistent TCP session; verify this is a controlled long-poll, not a hung connection.',
+      'FTPTA5 CLIENT SENT RESET on two occasions — client abruptly closed; check FTP client application for error handling.',
+      'FTPTA5 total across 6 items: 853KB inbound / 10KB outbound — asymmetric; primarily a download resource.',
+      'FTPTA8 APPL ISSUED CLOSE on all 13 items — clean application-controlled closes; no anomalies.'
+    ],
+    cols: ['Resource', 'Started Date', 'Started Time', 'Ended Date', 'Ended Time', 'Duration', 'Inbound Bytes', 'Outbound Bytes', 'Term Code', 'Description'],
+    rows: [
+      ['FTPTA5','03/21/09','14:04:06','03/21/09','14:04:07','0.65',      '257,537','3,052', '61','CLIENT SENT RESET'],
+      ['FTPTA5','03/21/09','14:05:35','03/21/09','14:05:45','10.08',     '27,043', '329',   '52','APPL ISSUED CLOSE'],
+      ['FTPTA5','03/21/09','15:30:34','03/21/09','15:30:35','0.68',      '257,537','3,052', '61','CLIENT SENT RESET'],
+      ['FTPTA8','03/21/09','08:09:32','03/21/09','15:29:02','7:19:29.45','274,763','15,912','52','APPL ISSUED CLOSE'],
+      ['FTPTA8','03/21/09','13:17:39','03/21/09','14:42:50','1:25:11.40','47,498', '2,291', '52','APPL ISSUED CLOSE'],
+    ],
+    badges: { 'CLIENT SENT RESET': 'amber', 'APPL ISSUED CLOSE': 'green' },
+    badgeCol: 9
+  },
+
+  'smf115-mq-bufpool': {
+    title: 'WebSphere MQ Buffer Pool Stats',
+    smf: 'SMF 115',
+    subtitle: 'Buffer pool manager statistics — get page requests and DASD I/O',
+    insights: [
+      'ZSC Pool 3 had 3.69M buffer steals — the pool is undersized relative to its workload; consider increasing buffer count.',
+      'ZSA Pool 1 shows the highest get-page activity (1.3M old + 507K new) — active queue with high churn.',
+      'ZSA Pool 0 has only 386 pages written to DASD — very efficient buffering for its workload.',
+      'Grand total 231M get-page requests across all systems — significant MQ throughput; confirm queue manager health.'
+    ],
+    cols: ['System', 'Period End', 'Pool #', 'Buffers in Pool', 'Stealable Buffers', 'Buffer Steals', 'GetPage Old', 'GetPage New', 'DASD Reads', 'Pages Written', 'DASD Write Ops'],
+    rows: [
+      ['ZSA','11:00:07','0','50,000','49,618','0',         '833,658',     '26,025', '0','386','112'],
+      ['ZSA','11:00:07','1','20,000','17,424','0',         '1,318,813',   '507,094','0','2,518','689'],
+      ['ZSA','11:00:07','2','50,000','49,990','0',         '2,962',       '528',    '0','14', '14'],
+      ['ZSA','11:00:07','3','20,000','19,830','0',         '198,242',     '5,373',  '0','144','41'],
+      ['ZSC','11:24:43','3','5,000', '4,871', '3,699,704', '226,849,650', '22,659', '3,698,301','230','66'],
+    ]
+  },
+
+  'smf116-mq-cpu': {
+    title: 'MQ Queue CPU Time Report',
+    smf: 'SMF 116',
+    subtitle: 'CPU time for MQGET and MQPUT1 operations per queue',
+    insights: [
+      'CICS.BRIDGE.REPLY.Z3 routed through SYSTEM.CLUSTER.TRANSMIT — a cluster queue, not a local direct queue.',
+      'DQMIPV6.CSQ1.REPLYQ shows 9.3ms MQGET CPU — the most CPU-intensive GET in this report; review message size.',
+      'CICS.BRIDGE.QUEUE: 0.12ms CPU for MQGET — lightweight bridge traffic.',
+      'MQGT.OTMA.QUEUE: zero CPU for both operations — opened but no messages processed during this interval.'
+    ],
+    cols: ['Log Time', 'Connection', 'Queue Name', 'Base Queue', 'Open Time', 'Close Time', 'MQGET CPU', 'MQPUT1 CPU'],
+    rows: [
+      ['12:20:28','U0200021','MQGT.OTMA.QUEUE',      'MQGT.OTMA.QUEUE',              '16:20:28.09','16:20:28.43','00:00:00.000000','00:00:00.000000'],
+      ['12:20:28','CICS3A1A','CICS.BRIDGE.REPLY.Z3', 'SYSTEM.CLUSTER.TRANSMIT.QUEUE','16:20:28.64','16:20:28.64','00:00:00.000000','00:00:00.000363'],
+      ['12:20:28','CICS3A1A','CICS.BRIDGE.QUEUE',    'CICS.BRIDGE.QUEUE',            '16:20:28.50','16:20:28.66','00:00:00.000120','00:00:00.000000'],
+      ['12:20:29','U0240087','DQMIPV6.CSQ1.REPLYQ',  'DQMIPV6.CSQ1.REPLYQ',         '16:20:28.89','16:20:29.36','00:00:00.009340','00:00:00.000000'],
+    ]
+  },
+
+  'smf120-java': {
+    title: 'WebSphere Java CPU Times',
+    smf: 'SMF 120 Sub5',
+    subtitle: 'J2EE container bean method invocation timings — AXZ4 cell',
+    insights: [
+      'invoke method shows two different invocations: 13.6ms and 6.2ms CPU — variance may indicate different code paths.',
+      'login method at 4.2ms CPU — a fast credential check; consistent with LDAP-backed auth.',
+      'Second invoke with 2 calls averages 5.6ms CPU but ranges 1.2ms–10ms — high variance; monitor for outliers.',
+      'Max response times (20ms, 14ms) remain under 50ms threshold — no SLA breach evident.'
+    ],
+    cols: ['Sub', 'Server Host', 'Server Name', 'Cell', 'Node', 'Bean Name', 'Method', 'Invocations', 'Avg Resp (s)', 'Max Resp (s)', 'Avg CPU (s)', 'Min CPU (s)', 'Max CPU (s)'],
+    rows: [
+      ['5','AWT4','AXZ4S1','AXZ4','AXZ44','Tonam::Inf','invoke:java.lang.String,j','1','0.014','0.014','0.013665','0.013665','0.013665'],
+      ['5','AWT4','AXZ4S1','AXZ4','AXZ44','Tonam::Inf','invoke:java.lang.String,j','1','0.020','0.020','0.006287','0.006287','0.006287'],
+      ['5','AWT4','AXZ4S1','AXZ4','AXZ44','Tonam::Inf','login:java.lang.String,ja', '1','0.006','0.006','0.004206','0.004206','0.004206'],
+      ['5','AWT4','AXZ4S1','AXZ4','AXZ44','Tonam::Inf','invoke:java.lang.String,j','2','0.005','0.010','0.005650','0.001264','0.010036'],
+    ]
+  },
+
+  'smf120-servlet': {
+    title: 'WebSphere Servlet Times',
+    smf: 'SMF 120 Sub7',
+    subtitle: 'WebContainer activity with servlet CPU times — ATX4 cell',
+    insights: [
+      'ActionServlet at 28.6ms CPU — the primary MVC dispatcher; dominates this request cycle.',
+      '/en_US/common/ locale and recent servlets each under 0.1ms — lightweight metadata lookups.',
+      '/acessLogon.jsp took 214ms CPU in 796ms elapsed — a slow JSP; review LDAP/DB round-trips in login.',
+      '/userhome.jsp at 5.5ms CPU in 9ms elapsed — efficient post-login home page render.'
+    ],
+    cols: ['Sub', 'Log Time', 'Host', 'Server', 'Activity Start', 'Activity End', 'Duration (s)', 'Cell', 'Node', 'Sessions', 'Servlet Name', 'CPU (s)'],
+    rows: [
+      ['7','00:00:01.50','AWX4','ATX4S1C','04:59:56.643606','04:59:56.676287','0.032681','ATX4','ATX44','','en_US/common/locale', '0.000034'],
+      ['7','00:00:01.50','AWX4','ATX4S1C','04:59:56.643606','04:59:56.676287','0.032681','ATX4','ATX44','','en_US/common/recent', '0.000030'],
+      ['7','00:00:01.50','AWX4','ATX4S1C','04:59:56.643606','04:59:56.676287','0.032681','ATX4','ATX44','','TPAInvestigation',    '0.028294'],
+      ['7','00:00:01.50','AWX4','ATX4S1C','04:59:56.643606','04:59:56.676287','0.032681','ATX4','ATX44','','ActionServlet',       '0.029511'],
+      ['7','00:00:06.50','AWX4','ATX4S1C','05:00:03.649787','05:00:04.446123','0.796336','ATX4','ATX44','1','acessLogon.jsp',     '0.214795'],
+      ['7','00:00:11.51','AWX4','ATX4S1C','05:00:07.361743','05:00:07.370785','0.009042','ATX4','ATX44','','userhome.jsp',        '0.005556'],
+    ]
+  },
+
+  'smf220-rsd': {
+    title: 'RSD Folder Audit',
+    smf: 'SMF 220',
+    subtitle: 'Folder document audit statistics — SYS3 · 04/14/12',
+    insights: [
+      'All records belong to a single job T0144516 in folder ARY4FLD@ — a single batch print/archive run.',
+      'Documents show sequential ORA timestamps — folder populated in order within the same second range.',
+      'Document types EH, ET, CR, IG, TB, 10636458 suggest various document classes within one folder.',
+      'Single ATPMW81 user account owns all folder operations — centralised document management job.'
+    ],
+    cols: ['Date', 'Time', 'System', 'User Name', 'Folder Name', 'Job Name', 'Object Type', 'Document Name'],
+    rows: [
+      ['04/14/12','10:00:08','SYS3','ATPMW81','ARY4FLD@','T0144516','DOC','05381:ET -NRYNRT69C59L049N'],
+      ['04/14/12','10:00:08','SYS3','ATPMW81','ARY4FLD@','T0144516','DOC','01943:CR -TRNGMO58C10E690Z'],
+      ['04/14/12','10:00:09','SYS3','ATPMW81','ARY4FLD@','T0144516','DOC','07087:IG -VRZGMT69L46D423F'],
+      ['04/14/12','10:00:15','SYS3','ATPMW81','ARY4FLD@','T0144516','DOC','15364:EH -TVSMOZ63C64C623L'],
+      ['04/14/12','10:00:16','SYS3','ATPMW81','ARY4FLD@','T0144516','DOC','14930:EH -QSADUT67D64G388J'],
+      ['04/14/12','10:00:19','SYS3','ATPMW81','ARY4FLD@','T0144516','DOC','14930:EH -QSADUT67D64G388J'],
+      ['04/14/12','10:00:20','SYS3','ATPMW81','ARY4FLD@','T0144516','DOC','01982:TB -KLMVNK79T63B220O'],
+      ['04/14/12','10:00:28','SYS3','ATPMW81','ARY4FLD@','T0144516','DOC','03069:10636458-GRCMRA67M16G273I'],
+    ]
+  }
+};
+
+/* ─── PAGE / REPORT NAVIGATION ─────────────────────── */
+
+let currentPage = 'dashboard';
+let currentReportId = null;
+let sortState = {}; // { colIdx, dir }
+let filterState = {};
+
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const pg = document.getElementById('page-' + id);
+  if (pg) { pg.classList.add('active'); }
+  const nav = document.getElementById('nav-' + id);
+  if (nav) nav.classList.add('active');
+  currentPage = id;
+  currentReportId = null;
+}
+
+function showReport(reportId) {
+  const def = REPORTS[reportId];
+  if (!def) { toast('Report definition not found: ' + reportId, 'error'); return; }
+
+  // Hide all pages
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+
+  // Activate nav
+  const nav = document.getElementById('nav-' + reportId);
+  if (nav) nav.classList.add('active');
+
+  currentReportId = reportId;
+  sortState = {};
+  filterState = {};
+  renderReport(reportId, def);
+}
+
+function renderReport(reportId, def) {
+  const container = document.getElementById('dynamic-report-container');
+
+  // Build insights HTML
+  const insightsHtml = def.insights ? `
+    <div class="report-insights">
+      <div class="ri-icon">✦</div>
+      <div class="ri-content">
+        <div class="ri-title">Data Insights — ${def.title}</div>
+        <ul class="ri-points">
+          ${def.insights.map(i => `<li>${i}</li>`).join('')}
+        </ul>
+      </div>
+    </div>` : '';
+
+  container.innerHTML = `
+  <div class="page active" id="page-report-${reportId}">
+    <div class="page-breadcrumb">
+      <span onclick="showPage('dashboard')">Dashboard</span>
+      <span class="separator">›</span>
+      <span style="color:var(--text-secondary)">${def.smf}</span>
+      <span class="separator">›</span>
+      <span style="color:var(--text-primary)">${def.title}</span>
+    </div>
+    <div class="page-header">
+      <div>
+        <div class="page-title">${def.title}</div>
+        <div class="page-subtitle">${def.subtitle}</div>
+      </div>
+      <div class="page-actions">
+        <span class="chip">${def.smf}</span>
+        <button class="btn btn-ghost" onclick="exportTableCSV('${reportId}')">⬇ Export CSV</button>
+        <button class="btn btn-ghost" onclick="copyTableToClipboard('${reportId}')">⎘ Copy</button>
+        <button class="btn btn-primary" onclick="openUploadModal()">⬆ Upload New</button>
+      </div>
+    </div>
+    ${insightsHtml}
+    <div class="report-toolbar" id="toolbar-${reportId}">
+      <input class="filter-input" id="filter-${reportId}" type="text" placeholder="Filter rows…"
+        oninput="filterTable('${reportId}', this.value)">
+      <select class="filter-select" id="colFilter-${reportId}" onchange="filterTable('${reportId}', document.getElementById('filter-${reportId}').value)">
+        <option value="">All columns</option>
+        ${def.cols.map((c, i) => `<option value="${i}">${c}</option>`).join('')}
+      </select>
+      <div class="toolbar-spacer"></div>
+      <span class="row-count" id="rowCount-${reportId}">${def.rows.length} rows</span>
+      <button class="btn btn-ghost" onclick="clearFilters('${reportId}')" style="font-size:11px;">✕ Clear</button>
+    </div>
+    <div class="table-wrap" id="tableWrap-${reportId}">
+      ${buildTable(reportId, def, def.rows)}
+    </div>
+  </div>`;
+
+  // Draw chart if report has chartable data
+  drawReportChart(reportId, def);
+}
+
+function buildTable(reportId, def, rows) {
+  const headerHtml = def.cols.map((c, i) => {
+    const ss = sortState[reportId];
+    let cls = '';
+    if (ss && ss.col === i) cls = ss.dir === 'asc' ? 'sorted-asc' : 'sorted-desc';
+    return `<th class="${cls}" onclick="sortTable('${reportId}', ${i})">${c}</th>`;
+  }).join('');
+
+  if (rows.length === 0) {
+    return `<table><thead><tr>${headerHtml}</tr></thead><tbody>
+      <tr><td colspan="${def.cols.length}">
+        <div class="empty-state">
+          <div class="empty-icon">◎</div>
+          <div class="empty-title">No matching records</div>
+          <div class="empty-desc">Adjust your filter criteria and try again.</div>
+        </div>
+      </td></tr></tbody></table>`;
+  }
+
+  const badgeMap = def.badges || {};
+  const badgeCol = def.badgeCol !== undefined ? def.badgeCol : -1;
+
+  const bodyHtml = rows.map(row => {
+    const cells = row.map((cell, ci) => {
+      let display = cell;
+      if (ci === badgeCol && badgeMap[cell]) {
+        display = `<span class="badge badge-${badgeMap[cell]}">${cell}</span>`;
+      } else if (isNumericish(cell) && cell.length > 0) {
+        display = `<span class="mono">${cell}</span>`;
+      } else if (isTimestamp(cell)) {
+        display = `<span class="mono" style="color:var(--text-secondary)">${cell}</span>`;
+      }
+      return `<td>${display}</td>`;
+    }).join('');
+    return `<tr onclick="rowClick(this)">${cells}</tr>`;
+  }).join('');
+
+  let totalsHtml = '';
+  if (def.totals) {
+    totalsHtml = `<tr style="background:var(--bg-panel-alt);font-weight:600;">
+      ${def.totals.map(c => `<td class="mono" style="color:var(--cyan)">${c}</td>`).join('')}
+    </tr>`;
+  }
+
+  return `<table id="table-${reportId}">
+    <thead><tr>${headerHtml}</tr></thead>
+    <tbody>${bodyHtml}${totalsHtml}</tbody>
+  </table>`;
+}
+
+function isNumericish(val) {
+  if (!val) return false;
+  const stripped = val.replace(/[,.$%:]/g,'');
+  return !isNaN(parseFloat(stripped)) && stripped.length > 0 && !/\s/.test(val.trim()) && val.length < 20;
+}
+function isTimestamp(val) {
+  return /^\d{2}:\d{2}(:\d{2})?/.test(val) || /^\d{2}\/\d{2}\/\d{2}/.test(val);
+}
+
+function sortTable(reportId, colIdx) {
+  const def = REPORTS[reportId];
+  if (!def) return;
+  const ss = sortState[reportId] || { col: -1, dir: 'asc' };
+  let newDir = 'asc';
+  if (ss.col === colIdx) newDir = ss.dir === 'asc' ? 'desc' : 'asc';
+  sortState[reportId] = { col: colIdx, dir: newDir };
+
+  const filterVal = document.getElementById('filter-' + reportId)?.value || '';
+  const colFilter = document.getElementById('colFilter-' + reportId)?.value;
+  let rows = applyFilter(def.rows, filterVal, colFilter !== '' ? parseInt(colFilter) : -1);
+
+  rows = [...rows].sort((a, b) => {
+    const va = a[colIdx] || '';
+    const vb = b[colIdx] || '';
+    const na = parseFloat(va.replace(/[,.$%]/g,''));
+    const nb = parseFloat(vb.replace(/[,.$%]/g,''));
+    let cmp;
+    if (!isNaN(na) && !isNaN(nb)) {
+      cmp = na - nb;
+    } else {
+      cmp = va.localeCompare(vb);
+    }
+    return newDir === 'asc' ? cmp : -cmp;
+  });
+
+  const wrap = document.getElementById('tableWrap-' + reportId);
+  if (wrap) wrap.innerHTML = buildTable(reportId, def, rows);
+  updateRowCount(reportId, rows.length);
+}
+
+function filterTable(reportId, val) {
+  const def = REPORTS[reportId];
+  if (!def) return;
+  const colFilter = document.getElementById('colFilter-' + reportId)?.value;
+  const colIdx = colFilter !== '' ? parseInt(colFilter) : -1;
+  let rows = applyFilter(def.rows, val, colIdx);
+
+  const ss = sortState[reportId];
+  if (ss && ss.col >= 0) {
+    rows = [...rows].sort((a, b) => {
+      const va = a[ss.col] || '';
+      const vb = b[ss.col] || '';
+      const na = parseFloat(va.replace(/[,.$%]/g,''));
+      const nb = parseFloat(vb.replace(/[,.$%]/g,''));
+      let cmp = !isNaN(na) && !isNaN(nb) ? na - nb : va.localeCompare(vb);
+      return ss.dir === 'asc' ? cmp : -cmp;
+    });
+  }
+
+  const wrap = document.getElementById('tableWrap-' + reportId);
+  if (wrap) wrap.innerHTML = buildTable(reportId, def, rows);
+  updateRowCount(reportId, rows.length);
+}
+
+function applyFilter(rows, val, colIdx) {
+  if (!val) return rows;
+  const v = val.toLowerCase();
+  return rows.filter(row => {
+    if (colIdx >= 0 && colIdx < row.length) {
+      return (row[colIdx] || '').toLowerCase().includes(v);
+    }
+    return row.some(cell => (cell || '').toLowerCase().includes(v));
+  });
+}
+
+function updateRowCount(reportId, n) {
+  const el = document.getElementById('rowCount-' + reportId);
+  if (el) el.textContent = n + ' row' + (n !== 1 ? 's' : '');
+}
+
+function clearFilters(reportId) {
+  const fi = document.getElementById('filter-' + reportId);
+  const ci = document.getElementById('colFilter-' + reportId);
+  if (fi) fi.value = '';
+  if (ci) ci.value = '';
+  sortState[reportId] = {};
+  const def = REPORTS[reportId];
+  if (!def) return;
+  const wrap = document.getElementById('tableWrap-' + reportId);
+  if (wrap) wrap.innerHTML = buildTable(reportId, def, def.rows);
+  updateRowCount(reportId, def.rows.length);
+}
+
+function rowClick(row) {
+  document.querySelectorAll('tbody tr.selected').forEach(r => r.classList.remove('selected'));
+  row.classList.add('selected');
+  row.style.background = 'rgba(0,212,255,0.08)';
+  setTimeout(() => { row.style.background = ''; }, 1800);
+}
+
+/* ─── GLOBAL SEARCH ──────────────────────────────── */
+function globalSearchFn(val) {
+  if (!val || val.length < 2) return;
+  const v = val.toLowerCase();
+  const matches = Object.entries(REPORTS).filter(([id, def]) => {
+    return def.title.toLowerCase().includes(v)
+        || def.subtitle.toLowerCase().includes(v)
+        || def.smf.toLowerCase().includes(v)
+        || def.rows.some(r => r.some(c => (c||'').toLowerCase().includes(v)));
+  });
+  if (matches.length > 0) {
+    // Show first match
+    showReport(matches[0][0]);
+    filterTable(matches[0][0], val);
+  }
+}
+
+/* ─── EXPORT FUNCTIONS ───────────────────────────── */
+function exportTableCSV(reportId) {
+  const def = REPORTS[reportId];
+  if (!def) return;
+  const colFilter = document.getElementById('colFilter-' + reportId)?.value;
+  const filterVal = document.getElementById('filter-' + reportId)?.value || '';
+  let rows = applyFilter(def.rows, filterVal, colFilter !== '' ? parseInt(colFilter) : -1);
+
+  const lines = [def.cols.join(','), ...rows.map(r => r.map(c => `"${c}"`).join(','))];
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = `smf-${reportId}-${Date.now()}.csv`; a.click();
+  toast('CSV exported — ' + rows.length + ' rows', 'success');
+}
+
+function copyTableToClipboard(reportId) {
+  const def = REPORTS[reportId];
+  if (!def) return;
+  const text = [def.cols.join('\t'), ...def.rows.map(r => r.join('\t'))].join('\n');
+  navigator.clipboard.writeText(text).then(() => toast('Table copied to clipboard', 'success'));
+}
+
+function exportDashboard() {
+  toast('PDF export queued — check your downloads folder', 'info');
+  setTimeout(() => toast('Dashboard PDF ready', 'success'), 1800);
+}
+
+/* ─── UPLOAD MODAL ───────────────────────────────── */
+function openUploadModal() {
+  document.getElementById('uploadModal').classList.add('open');
+  document.getElementById('progressWrap').style.display = 'none';
+  document.getElementById('progressBar').style.width = '0%';
+  document.getElementById('dropHint').textContent = 'Supports sequential and GDG datasets exported as flat files';
+}
+function closeUploadModal() {
+  document.getElementById('uploadModal').classList.remove('open');
+}
+document.getElementById('uploadModal').addEventListener('click', function(e) {
+  if (e.target === this) closeUploadModal();
+});
+
+function handleDragOver(e) {
+  e.preventDefault(); e.stopPropagation();
+  document.getElementById('dropZone').classList.add('drag-over');
+}
+function handleDragLeave(e) {
+  document.getElementById('dropZone').classList.remove('drag-over');
+}
+function handleDrop(e) {
+  e.preventDefault(); e.stopPropagation();
+  document.getElementById('dropZone').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) handleFileLoad(file);
+}
+function handleFileSelect(input) {
+  const file = input.files[0];
+  if (file) handleFileLoad(file);
+}
+function handleFileLoad(file) {
+  document.getElementById('dropHint').textContent = `Selected: ${file.name} (${(file.size/1024/1024).toFixed(2)} MB)`;
+}
+function simulateUpload() {
+  const pw = document.getElementById('progressWrap');
+  const pb = document.getElementById('progressBar');
+  pw.style.display = 'block';
+  let pct = 0;
+  const iv = setInterval(() => {
+    pct += Math.random() * 18;
+    if (pct >= 100) {
+      pct = 100; clearInterval(iv);
+      setTimeout(() => {
+        closeUploadModal();
+        toast('SMF file processed — 48,221 records indexed', 'success');
+      }, 400);
+    }
+    pb.style.width = pct + '%';
+  }, 200);
+}
+
+/* ─── TOAST ──────────────────────────────────────── */
+function toast(msg, type='info') {
+  const icons = { success:'✓', warn:'⚠', error:'✕', info:'ℹ' };
+  const wrap = document.getElementById('toastWrap');
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<span>${icons[type]||'ℹ'}</span><span>${msg}</span>`;
+  wrap.appendChild(el);
+  setTimeout(() => { el.style.opacity='0'; el.style.transition='opacity 0.3s'; setTimeout(()=>el.remove(),300); }, 3200);
+}
+
+/* ─── REPORT MINI CHART ──────────────────────────── */
+function drawReportChart(reportId, def) {
+  // Charts are drawn on the dashboard, not inline in reports (keeps reports clean)
+}
+
+/* ─── KEYBOARD SHORTCUTS ─────────────────────────── */
+document.addEventListener('keydown', function(e) {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+    e.preventDefault();
+    document.getElementById('globalSearch').focus();
+  }
+  if (e.key === 'Escape') {
+    closeUploadModal();
+    document.getElementById('globalSearch').blur();
+  }
+});
+
+/* ─── INIT ───────────────────────────────────────── */
+window.addEventListener('load', () => {
+  setTimeout(initCharts, 150);
+  toast('SMF portal ready · ' + Object.keys(REPORTS).length + ' reports available', 'info');
+});
+</script>
+</body>
+</html>
